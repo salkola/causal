@@ -1,22 +1,23 @@
 import numpy as np
 
-from config import MEAN_UPLIFT_VALUE, RANDOM_SEED
+from config import MEAN_UPLIFT_VALUE, RANDOM_POLICY_SCORE_STD, RANDOM_SEED
 
 
 class RandomPolicy:
-    """Random ranking baseline: scores are a random permutation (no ties)."""
+    """
+    Random ranking baseline: i.i.d. Gaussian scores (no ties almost surely).
+    Default σ is RANDOM_POLICY_SCORE_STD = SD(τ) under the Beta-intent DGP in config.
+    """
 
-    def __init__(self, seed=RANDOM_SEED):
+    def __init__(self, seed=RANDOM_SEED, score_std=RANDOM_POLICY_SCORE_STD):
         self._rng = np.random.default_rng(seed)
+        self._score_std = float(score_std)
 
     def fit(self, X, t, y):
         pass
 
     def predict_uplift(self, X):
-        n = len(X)
-        perm = self._rng.permutation(n).astype(np.float64)
-        # Strictly monotone transform: same ranking as perm, mean scale ~O(1)
-        return (perm + 0.5) / n
+        return self._rng.normal(0.0, self._score_std, size=len(X))
 
 class MeanUplift:
     def predict(self, X):

@@ -7,6 +7,7 @@ from config import (
     METRIC_DECIMALS,
     QINI_NULL_DRAWS,
     QINI_PLOT_NULL_BAND_DRAWS,
+    RANDOM_POLICY_SCORE_STD,
     RANDOM_SEED,
     SAFE_CORR_STD_EPS,
 )
@@ -104,7 +105,10 @@ def print_evaluation_summary(models_results, true_effect):
         "Ranked by Qini Δ."
     )
     print(" Random row: Qini raw = that null median and Δ = 0 (baseline); ")
-    print(" Policy/Corr still use random scores; Qini curve uses random scores.")
+    print(
+        f" Policy/Corr use random Gaussian scores (σ = SD(τ) under Beta DGP = {RANDOM_POLICY_SCORE_STD:.{METRIC_DECIMALS}f}); "
+        "Qini curve uses the same scores."
+    )
     print(" ê(X) for IPW fit on train only. Policy (IPW obs) = Hajek effect in top slice;")
     print(" Policy (true τ) = mean simulator τ in that slice — not IPW-adjusted.)\n")
 

@@ -1,5 +1,7 @@
 """Project-wide constants for simulation, models, and evaluation."""
 
+import math
+
 # Randomness
 RANDOM_SEED = 0
 
@@ -66,3 +68,14 @@ UPLIFT_BUCKET_COUNT = 5
 
 # Baselines
 MEAN_UPLIFT_VALUE = 0.03
+
+
+def _beta_variance(a, b):
+    return (a * b) / ((a + b) ** 2 * (a + b + 1))
+
+
+# Simulator CATE: τ = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent, intent ~ Beta(BETA_INTENT_A, BETA_INTENT_B).
+# SD(τ) = |CATE_INTENT_SLOPE| * SD(intent). RandomPolicy uses N(0, SD(τ)) so score spread matches heterogeneity scale.
+RANDOM_POLICY_SCORE_STD = abs(CATE_INTENT_SLOPE) * math.sqrt(
+    _beta_variance(BETA_INTENT_A, BETA_INTENT_B)
+)
