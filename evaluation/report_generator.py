@@ -2,10 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from config import EVALUATION_REPORT_TITLE, METRIC_DECIMALS, SAFE_CORR_STD_EPS
+from config import (
+    EVALUATION_REPORT_TITLE,
+    METRIC_DECIMALS,
+    QINI_NULL_DRAWS,
+    QINI_PLOT_NULL_BAND_DRAWS,
+    RANDOM_SEED,
+    SAFE_CORR_STD_EPS,
+)
 from evaluation.metrics import (
+    hajek_ate,
     model_policy_value,
     oracle_policy_value,
+    qini_null_band_curves,
     true_regret,
 )
 
@@ -29,10 +38,13 @@ def plot_uplift_distribution(models_results):
 
 
 # ============================================================
-# UPLIFT CALIBRATION PLOT (FIXED)
+# UPLIFT CALIBRATION (Hajek IPW within score bins)
 # ============================================================
 
-def plot_uplift_calibration(models_results, y, t, bins=10):
+def plot_uplift_calibration(models_results, y, t, propensity, bins=10):
+    y = np.asarray(y, dtype=float)
+    t = np.asarray(t)
+    propensity = np.asarray(propensity, dtype=float)
 
     plt.figure()
 
@@ -40,63 +52,68 @@ def plot_uplift_calibration(models_results, y, t, bins=10):
 
         uplift = r["uplift"]
 
-        # 🚨 HANDLE CONSTANT UPLIFT (Random policy)
         if np.std(uplift) < SAFE_CORR_STD_EPS:
             plt.plot(
                 [0, bins - 1],
                 [0, 0],
                 linestyle="--",
-                label=f"{r['name']} (flat)"
+                label=f"{r['name']} (flat)",
             )
             continue
 
-        df = pd.DataFrame({
-            "y": y,
-            "t": t,
-            "uplift": uplift
-        })
-
+        df = pd.DataFrame({"uplift": uplift})
         df["bin"] = pd.qcut(df["uplift"], bins, duplicates="drop")
 
-        lift = df.groupby("bin").apply(
-            lambda d: d[d.t == 1]["y"].mean() - d[d.t == 0]["y"].mean()
-        )
+        lifts = []
+        for cat in df["bin"].cat.categories:
+            m = (df["bin"] == cat).to_numpy()
+            lifts.append(hajek_ate(y, t, propensity, m))
 
-        plt.plot(range(len(lift)), lift.values, marker="o", label=r["name"])
+        plt.plot(range(len(lifts)), lifts, marker="o", label=r["name"])
 
-    # Optional baseline for clarity
-    plt.axhline(0, linestyle="--", color="black", alpha=0.5, label="Zero uplift")
+    plt.axhline(0, linestyle="--", color="black", alpha=0.5, label="Zero")
 
-    plt.title("Uplift Calibration (by Score Decile)")
+    plt.title("Uplift calibration (Hajek IPW by score decile)")
     plt.xlabel("Uplift decile (low → high)")
-    plt.ylabel("Observed treatment effect proxy")
+    plt.ylabel("Hajek IPW effect in bin")
     plt.legend()
     plt.show()
 
 
 # ============================================================
-# REPORT (single text summary — no duplicate leaderboard)
+# REPORT
 # ============================================================
 
 def print_evaluation_summary(models_results, true_effect):
     """
-    One ranked table: Qini, observed vs true-τ policy value, regret, uplift, corr.
+    One ranked table: Qini excess vs random null, raw Qini, policies, regret, corr.
     """
     oracle_val = oracle_policy_value(true_effect)
-    ranked = sorted(models_results, key=lambda x: x["qini_auc"], reverse=True)
+    ranked = sorted(models_results, key=lambda x: x["qini_auc_excess"], reverse=True)
     d = METRIC_DECIMALS
+    null_ref = models_results[0]["qini_null_median"]
 
     print(f"\n{EVALUATION_REPORT_TITLE}\n")
     print(f"Oracle policy value (true τ, top fraction): {oracle_val:.{d}f}\n")
-    print("(Ranked by Qini AUC. Policy (obs) = slice in assignment/outcome space;")
-    print(" Policy (true τ) = mean true effect in top slice by model score.)\n")
+    print("(Holdout. Qini raw = Hajek IPW Qini AUC on test; Qini Δ = raw minus median")
+    print(
+        f" of {QINI_NULL_DRAWS} random-ranking AUCs ({null_ref:.{d}f} on this fold). "
+        "Ranked by Qini Δ."
+    )
+    print(
+        " Random row: Qini raw = that null median and Δ = 0 (baseline); "
+        "Policy/Corr still use random scores; Qini curve uses random scores."
+    )
+    print(" ê(X) for IPW fit on train only. Policy (IPW obs) = Hajek effect in top slice;")
+    print(" Policy (true τ) = mean simulator τ in that slice — not IPW-adjusted.)\n")
 
     for i, r in enumerate(ranked):
         pol_true = model_policy_value(true_effect, r["uplift"])
         regret = true_regret(r["uplift"], true_effect)
         print(f"{i + 1}. {r['name']}")
-        print(f"   Qini AUC          : {r['qini_auc']:.{d}f}")
-        print(f"   Policy (observed) : {r['policy_value']:.{d}f}")
+        print(f"   Qini Δ (vs null)  : {r['qini_auc_excess']:.{d}f}")
+        print(f"   Qini raw          : {r['qini_auc_raw']:.{d}f}")
+        print(f"   Policy (IPW obs)  : {r['policy_value']:.{d}f}")
         print(f"   Policy (true τ)   : {pol_true:.{d}f}")
         print(f"   Regret (true τ)   : {regret:.{d}f}")
         print(f"   Avg uplift        : {r['avg_uplift']:.{d}f}")
@@ -104,27 +121,44 @@ def print_evaluation_summary(models_results, true_effect):
         print("")
 
 
-def generate_report(models_results, y, t, true_effect):
+def generate_report(models_results, y, t, true_effect, propensity):
 
     print_evaluation_summary(models_results, true_effect)
 
-    # ========================================================
-    # QINI CURVES
-    # ========================================================
+    xs0, y_med, y_p5, y_p95 = qini_null_band_curves(
+        y,
+        t,
+        propensity,
+        n_draws=QINI_PLOT_NULL_BAND_DRAWS,
+        seed=RANDOM_SEED + 20_021,
+    )
 
     plt.figure()
     for r in models_results:
         plt.plot(r["xs"], r["ys"], label=r["name"])
 
-    plt.legend()
-    plt.title("Qini Curves")
+    plt.fill_between(
+        xs0,
+        y_p5,
+        y_p95,
+        color="0.5",
+        alpha=0.22,
+        label=f"Null random ({QINI_PLOT_NULL_BAND_DRAWS} draws, 5–95%)",
+    )
+    plt.plot(
+        xs0,
+        y_med,
+        color="0.2",
+        linestyle="--",
+        linewidth=1.5,
+        label="Null random (median y)",
+    )
+
+    plt.legend(loc="best")
+    plt.title("Qini curves (Hajek IPW, holdout)")
     plt.xlabel("Fraction targeted")
-    plt.ylabel("Incremental gain")
+    plt.ylabel("IPW incremental effect")
     plt.show()
 
-    # ========================================================
-    # ADDITIONAL PLOTS
-    # ========================================================
-
     plot_uplift_distribution(models_results)
-    plot_uplift_calibration(models_results, y, t)
+    plot_uplift_calibration(models_results, y, t, propensity)

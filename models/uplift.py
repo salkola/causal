@@ -48,26 +48,37 @@ class XLearner:
 
 
 class DRLearner:
+    """
+    DR-learner style CATE: pseudo-outcome
+      Γ = μ₁(X) − μ₀(X) + T(Y − μ₁)/e(X) − (1−T)(Y − μ₀)/(1−e(X))
+    with separate μ₁, μ₀ (binary Y → classifiers) and final regression on Γ.
+    """
+
     def __init__(self):
         self.propensity = GradientBoostingClassifier(**gb_params)
-        self.outcome = GradientBoostingRegressor(**gb_params)
+        self.mu1 = GradientBoostingClassifier(**gb_params)
+        self.mu0 = GradientBoostingClassifier(**gb_params)
+        self.final_model = GradientBoostingRegressor(**gb_params)
 
     def fit(self, X, t, y):
+        t = np.asarray(t)
+        y = np.asarray(y, dtype=float)
 
         self.propensity.fit(X, t)
-        p = np.clip(
+        e = np.clip(
             self.propensity.predict_proba(X)[:, 1],
             PROPENSITY_CLIP_LOW,
             PROPENSITY_CLIP_HIGH,
         )
 
-        self.outcome.fit(X, y)
-        mu = self.outcome.predict(X)
+        self.mu1.fit(X[t == 1], y[t == 1])
+        self.mu0.fit(X[t == 0], y[t == 0])
 
-        self.dr = mu + (t - p) * (y - mu) / p
+        m1 = self.mu1.predict_proba(X)[:, 1]
+        m0 = self.mu0.predict_proba(X)[:, 1]
 
-        self.final_model = GradientBoostingRegressor(**gb_params)
-        self.final_model.fit(X, self.dr)
+        dr = m1 - m0 + t * (y - m1) / e - (1.0 - t) * (y - m0) / (1.0 - e)
+        self.final_model.fit(X, dr)
 
     def predict_uplift(self, X):
         return self.final_model.predict(X)

@@ -43,10 +43,18 @@ PROPENSITY_CLIP_LOW = 0.01
 PROPENSITY_CLIP_HIGH = 0.99
 
 # --- Evaluation / metrics ---
+HOLDOUT_TEST_SIZE = 0.2
 DEFAULT_POLICY_TOP_K = 0.2
 QINI_N_BINS = 20
-QINI_FRAC_MIN = 0.01
+# Smallest *nominal* fraction on the grid (actual first point may be larger if min prefix applies).
+QINI_FRAC_MIN = 0.05
 QINI_FRAC_MAX = 1.0
+# Hajek IPW is volatile in tiny slices; require at least this many rows in the prefix for the grid.
+QINI_MIN_PREFIX_SAMPLES = 500
+# Monte Carlo median AUC of random rankings for Qini excess (variance control)
+QINI_NULL_DRAWS = 100
+# Draws for Qini plot: median + 5–95% band of random-ranking curves
+QINI_PLOT_NULL_BAND_DRAWS = 100
 
 SAFE_CORR_STD_EPS = 1e-8
 
