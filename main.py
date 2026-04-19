@@ -4,7 +4,7 @@ from models.uplift import TLearner, XLearner, DRLearner
 from models.baselines import RandomPolicy
 
 from evaluation.leaderboard import evaluate_model, build_leaderboard
-
+from evaluation.report_generator import generate_report
 
 def main():
 
@@ -48,6 +48,7 @@ def main():
     # LEADERBOARD
     # ============================================================
 
+    generate_report(models_results, y, t, true_effect)
     build_leaderboard(models_results)
 
 
