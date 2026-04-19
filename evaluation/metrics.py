@@ -57,3 +57,24 @@ def qini_curve(y_true, uplift, treatment, n_bins=QINI_N_BINS):
 
 def qini_auc(xs, ys):
     return auc(xs, ys)
+
+
+def oracle_policy_value(true_effect, top_k=DEFAULT_POLICY_TOP_K):
+    idx = np.argsort(true_effect)[::-1]
+    k = max(1, int(top_k * len(true_effect)))
+    return float(np.mean(true_effect[idx[:k]]))
+
+
+def model_policy_value(true_effect, model_score, top_k=DEFAULT_POLICY_TOP_K):
+    idx = np.argsort(model_score)[::-1]
+    k = max(1, int(top_k * len(true_effect)))
+    return float(np.mean(true_effect[idx[:k]]))
+
+
+def true_regret(model_score, true_effect, top_k=DEFAULT_POLICY_TOP_K):
+    oracle_idx = np.argsort(true_effect)[::-1]
+    model_idx = np.argsort(model_score)[::-1]
+    k = max(1, int(top_k * len(true_effect)))
+    oracle_val = float(np.mean(true_effect[oracle_idx[:k]]))
+    model_val = float(np.mean(true_effect[model_idx[:k]]))
+    return oracle_val - model_val

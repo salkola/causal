@@ -51,8 +51,7 @@ QINI_FRAC_MAX = 1.0
 SAFE_CORR_STD_EPS = 1e-8
 
 METRIC_DECIMALS = 4
-LEADERBOARD_TITLE = "================ CAUSAL ML LEADERBOARD ================"
-REPORT_TITLE = "================ CAUSAL ML REPORT (TRUE EFFECT SPACE) ================"
+EVALUATION_REPORT_TITLE = "================ CAUSAL ML EVALUATION REPORT ================"
 
 # --- Decision table ---
 UPLIFT_BUCKET_COUNT = 5

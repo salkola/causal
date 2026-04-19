@@ -3,7 +3,7 @@ from data.simulate_ads import generate_ads_data, true_ate
 from models.uplift import TLearner, XLearner, DRLearner
 from models.baselines import RandomPolicy
 
-from evaluation.leaderboard import evaluate_model, build_leaderboard
+from evaluation.leaderboard import evaluate_model
 from evaluation.report_generator import generate_report
 
 def main():
@@ -49,7 +49,6 @@ def main():
     # ============================================================
 
     generate_report(models_results, y, t, true_effect)
-    build_leaderboard(models_results)
 
 
 if __name__ == "__main__":

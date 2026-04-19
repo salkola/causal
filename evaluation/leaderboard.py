@@ -1,6 +1,6 @@
 import numpy as np
 
-from config import LEADERBOARD_TITLE, METRIC_DECIMALS, SAFE_CORR_STD_EPS
+from config import SAFE_CORR_STD_EPS
 
 
 # ============================================================
@@ -54,23 +54,3 @@ def evaluate_model(name, model, X, t, y, true_effect):
     }
 
     return result
-
-
-# ============================================================
-# LEADERBOARD
-# ============================================================
-
-def build_leaderboard(results):
-
-    ranked = sorted(results, key=lambda x: x["qini_auc"], reverse=True)
-
-    d = METRIC_DECIMALS
-    print(f"\n{LEADERBOARD_TITLE}\n")
-
-    for i, r in enumerate(ranked):
-        print(f"{i+1}. {r['name']}")
-        print(f"   Qini AUC       : {r['qini_auc']:.{d}f}")
-        print(f"   Policy value   : {r['policy_value']:.{d}f}")
-        print(f"   Avg uplift     : {r['avg_uplift']:.{d}f}")
-        print(f"   Corr (true)    : {r['corr']:.{d}f}")
-        print("")

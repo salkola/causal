@@ -2,33 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-
-# ============================================================
-# CORE METRICS
-# ============================================================
-
-def oracle_policy_value(true_effect, top_k=0.2):
-    idx = np.argsort(true_effect)[::-1]
-    k = max(1, int(top_k * len(true_effect)))
-    return np.mean(true_effect[idx[:k]])
-
-
-def model_policy_value(true_effect, model_score, top_k=0.2):
-    idx = np.argsort(model_score)[::-1]
-    k = max(1, int(top_k * len(true_effect)))
-    return np.mean(true_effect[idx[:k]])
-
-
-def true_regret(model_score, true_effect, top_k=0.2):
-    oracle_idx = np.argsort(true_effect)[::-1]
-    model_idx = np.argsort(model_score)[::-1]
-
-    k = max(1, int(top_k * len(true_effect)))
-
-    oracle_val = np.mean(true_effect[oracle_idx[:k]])
-    model_val = np.mean(true_effect[model_idx[:k]])
-
-    return oracle_val - model_val
+from config import EVALUATION_REPORT_TITLE, METRIC_DECIMALS, SAFE_CORR_STD_EPS
+from evaluation.metrics import (
+    model_policy_value,
+    oracle_policy_value,
+    true_regret,
+)
 
 
 # ============================================================
@@ -62,7 +41,7 @@ def plot_uplift_calibration(models_results, y, t, bins=10):
         uplift = r["uplift"]
 
         # 🚨 HANDLE CONSTANT UPLIFT (Random policy)
-        if np.std(uplift) < 1e-8:
+        if np.std(uplift) < SAFE_CORR_STD_EPS:
             plt.plot(
                 [0, bins - 1],
                 [0, 0],
@@ -96,28 +75,38 @@ def plot_uplift_calibration(models_results, y, t, bins=10):
 
 
 # ============================================================
-# REPORT
+# REPORT (single text summary — no duplicate leaderboard)
 # ============================================================
+
+def print_evaluation_summary(models_results, true_effect):
+    """
+    One ranked table: Qini, observed vs true-τ policy value, regret, uplift, corr.
+    """
+    oracle_val = oracle_policy_value(true_effect)
+    ranked = sorted(models_results, key=lambda x: x["qini_auc"], reverse=True)
+    d = METRIC_DECIMALS
+
+    print(f"\n{EVALUATION_REPORT_TITLE}\n")
+    print(f"Oracle policy value (true τ, top fraction): {oracle_val:.{d}f}\n")
+    print("(Ranked by Qini AUC. Policy (obs) = slice in assignment/outcome space;")
+    print(" Policy (true τ) = mean true effect in top slice by model score.)\n")
+
+    for i, r in enumerate(ranked):
+        pol_true = model_policy_value(true_effect, r["uplift"])
+        regret = true_regret(r["uplift"], true_effect)
+        print(f"{i + 1}. {r['name']}")
+        print(f"   Qini AUC          : {r['qini_auc']:.{d}f}")
+        print(f"   Policy (observed) : {r['policy_value']:.{d}f}")
+        print(f"   Policy (true τ)   : {pol_true:.{d}f}")
+        print(f"   Regret (true τ)   : {regret:.{d}f}")
+        print(f"   Avg uplift        : {r['avg_uplift']:.{d}f}")
+        print(f"   Corr (true)       : {r['corr']:.{d}f}")
+        print("")
+
 
 def generate_report(models_results, y, t, true_effect):
 
-    oracle_val = oracle_policy_value(true_effect)
-
-    print("\n================ CAUSAL ML REPORT (TRUE EFFECT SPACE) ================\n")
-    print(f"Oracle policy value (true): {oracle_val:.4f}\n")
-
-    for r in models_results:
-
-        model_val = model_policy_value(true_effect, r["uplift"])
-        regret = true_regret(r["uplift"], true_effect)
-
-        print(f"{r['name']}")
-        print(f"  Qini AUC     : {r['qini_auc']:.4f}")
-        print(f"  Policy value : {model_val:.4f}")
-        print(f"  Regret       : {regret:.4f}")
-        print(f"  Avg uplift   : {r['avg_uplift']:.4f}")
-        print(f"  Corr (true)  : {r['corr']:.4f}")
-        print("")
+    print_evaluation_summary(models_results, true_effect)
 
     # ========================================================
     # QINI CURVES
