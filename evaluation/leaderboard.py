@@ -1,8 +1,10 @@
 import numpy as np
 
+from config import LEADERBOARD_TITLE, METRIC_DECIMALS, SAFE_CORR_STD_EPS
+
 
 # ============================================================
-# SAFE CORRELATION (fixes Random → NaN issue)
+# SAFE CORRELATION
 # ============================================================
 
 def safe_corr(x, y):
@@ -13,7 +15,7 @@ def safe_corr(x, y):
     x = np.asarray(x)
     y = np.asarray(y)
 
-    if np.std(x) < 1e-8 or np.std(y) < 1e-8:
+    if np.std(x) < SAFE_CORR_STD_EPS or np.std(y) < SAFE_CORR_STD_EPS:
         return 0.0
 
     return np.corrcoef(x, y)[0, 1]
@@ -62,12 +64,13 @@ def build_leaderboard(results):
 
     ranked = sorted(results, key=lambda x: x["qini_auc"], reverse=True)
 
-    print("\n================ CAUSAL ML LEADERBOARD ================\n")
+    d = METRIC_DECIMALS
+    print(f"\n{LEADERBOARD_TITLE}\n")
 
     for i, r in enumerate(ranked):
         print(f"{i+1}. {r['name']}")
-        print(f"   Qini AUC       : {r['qini_auc']:.4f}")
-        print(f"   Policy value   : {r['policy_value']:.4f}")
-        print(f"   Avg uplift     : {r['avg_uplift']:.4f}")
-        print(f"   Corr (true)    : {r['corr']:.4f}")
+        print(f"   Qini AUC       : {r['qini_auc']:.{d}f}")
+        print(f"   Policy value   : {r['policy_value']:.{d}f}")
+        print(f"   Avg uplift     : {r['avg_uplift']:.{d}f}")
+        print(f"   Corr (true)    : {r['corr']:.{d}f}")
         print("")

@@ -1,12 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from config import DEFAULT_POLICY_TOP_K, METRIC_DECIMALS, REPORT_TITLE
+
 
 # ============================================================
 # ORACLE (TRUE EFFECT SPACE)
 # ============================================================
 
-def oracle_policy_value(true_effect, top_k=0.2):
+def oracle_policy_value(true_effect, top_k=DEFAULT_POLICY_TOP_K):
     idx = np.argsort(true_effect)[::-1]
     k = max(1, int(top_k * len(true_effect)))
     return np.mean(true_effect[idx[:k]])
@@ -16,17 +18,17 @@ def oracle_policy_value(true_effect, top_k=0.2):
 # MODEL VALUE (TRUE EFFECT EVALUATION)
 # ============================================================
 
-def model_policy_value(true_effect, model_score, top_k=0.2):
+def model_policy_value(true_effect, model_score, top_k=DEFAULT_POLICY_TOP_K):
     idx = np.argsort(model_score)[::-1]
     k = max(1, int(top_k * len(true_effect)))
     return np.mean(true_effect[idx[:k]])
 
 
 # ============================================================
-# REGRET (CLEAN & VALID)
+# REGRET
 # ============================================================
 
-def true_regret(model_score, true_effect, top_k=0.2):
+def true_regret(model_score, true_effect, top_k=DEFAULT_POLICY_TOP_K):
     oracle_idx = np.argsort(true_effect)[::-1]
     model_idx = np.argsort(model_score)[::-1]
 
@@ -46,8 +48,9 @@ def generate_report(models_results, y, t, true_effect):
 
     oracle_val = oracle_policy_value(true_effect)
 
-    print("\n================ CAUSAL ML REPORT (TRUE EFFECT SPACE) ================\n")
-    print(f"Oracle policy value (true): {oracle_val:.4f}\n")
+    d = METRIC_DECIMALS
+    print(f"\n{REPORT_TITLE}\n")
+    print(f"Oracle policy value (true): {oracle_val:.{d}f}\n")
 
     ranked = sorted(models_results, key=lambda x: x["qini_auc"], reverse=True)
 
@@ -58,13 +61,13 @@ def generate_report(models_results, y, t, true_effect):
         model_val = model_policy_value(true_effect, r["uplift"])
 
         print(f"{r['name']}")
-        print(f"  Qini AUC     : {r['qini_auc']:.4f}")
-        print(f"  Policy value : {model_val:.4f}")
-        print(f"  Regret       : {regret:.4f}")
-        print(f"  Avg uplift   : {r['avg_uplift']:.4f}")
+        print(f"  Qini AUC     : {r['qini_auc']:.{d}f}")
+        print(f"  Policy value : {model_val:.{d}f}")
+        print(f"  Regret       : {regret:.{d}f}")
+        print(f"  Avg uplift   : {r['avg_uplift']:.{d}f}")
 
         if "corr" in r:
-            print(f"  Corr (true)  : {r['corr']:.4f}")
+            print(f"  Corr (true)  : {r['corr']:.{d}f}")
 
         print("")
 

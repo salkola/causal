@@ -1,5 +1,8 @@
 import numpy as np
 
+from config import MEAN_UPLIFT_VALUE
+
+
 class RandomPolicy:
     def fit(self, X, t, y):
         pass
@@ -9,4 +12,4 @@ class RandomPolicy:
 
 class MeanUplift:
     def predict(self, X):
-        return np.ones(len(X)) * 0.03
+        return np.ones(len(X)) * MEAN_UPLIFT_VALUE

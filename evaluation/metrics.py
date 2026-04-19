@@ -2,8 +2,15 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import auc
 
+from config import (
+    DEFAULT_POLICY_TOP_K,
+    QINI_FRAC_MAX,
+    QINI_FRAC_MIN,
+    QINI_N_BINS,
+)
 
-def policy_value(y, t, score, top_k=0.2):
+
+def policy_value(y, t, score, top_k=DEFAULT_POLICY_TOP_K):
     idx = np.argsort(score)[::-1]
     k = max(1, int(top_k * len(score)))
 
@@ -21,7 +28,7 @@ def policy_value(y, t, score, top_k=0.2):
     return treated_rate - control_rate
 
 
-def qini_curve(y_true, uplift, treatment, n_bins=20):
+def qini_curve(y_true, uplift, treatment, n_bins=QINI_N_BINS):
     df = pd.DataFrame({
         "y": y_true,
         "uplift": uplift,
@@ -33,7 +40,7 @@ def qini_curve(y_true, uplift, treatment, n_bins=20):
     xs, ys = [], []
     global_control_rate = df[df.t == 0]["y"].mean()
 
-    for k in np.linspace(0.01, 1.0, n_bins):
+    for k in np.linspace(QINI_FRAC_MIN, QINI_FRAC_MAX, n_bins):
         top = df.iloc[:int(k * len(df))]
 
         treated = top[top.t == 1]["y"]

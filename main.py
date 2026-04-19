@@ -1,5 +1,4 @@
-import numpy as np
-
+from config import CATE_INTERCEPT, CATE_INTENT_SLOPE
 from data.simulate_ads import generate_ads_data, true_ate
 from models.uplift import TLearner, XLearner, DRLearner
 from models.baselines import RandomPolicy
@@ -15,7 +14,7 @@ def main():
     t = df["treatment"].values
     y = df["conversion"].values
 
-    true_effect = 0.01 + 0.10 * df["intent"].values
+    true_effect = CATE_INTERCEPT + CATE_INTENT_SLOPE * df["intent"].values
 
     models_results = []
 
@@ -36,7 +35,7 @@ def main():
     )
 
     # ============================================================
-    # RANDOM POLICY (NOW ALSO HAS CORR)
+    # RANDOM POLICY
     # ============================================================
 
     random_model = RandomPolicy()

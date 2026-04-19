@@ -1,13 +1,9 @@
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 import numpy as np
 
-gb_params = {
-    "n_estimators": 100,
-    "learning_rate": 0.05,
-    "max_depth": 3,
-    "subsample": 0.8,
-    "random_state": 42
-}
+from config import GRADIENT_BOOSTING_PARAMS, PROPENSITY_CLIP_HIGH, PROPENSITY_CLIP_LOW
+
+gb_params = GRADIENT_BOOSTING_PARAMS
 
 
 class TLearner:
@@ -59,7 +55,11 @@ class DRLearner:
     def fit(self, X, t, y):
 
         self.propensity.fit(X, t)
-        p = np.clip(self.propensity.predict_proba(X)[:, 1], 0.01, 0.99)
+        p = np.clip(
+            self.propensity.predict_proba(X)[:, 1],
+            PROPENSITY_CLIP_LOW,
+            PROPENSITY_CLIP_HIGH,
+        )
 
         self.outcome.fit(X, y)
         mu = self.outcome.predict(X)
