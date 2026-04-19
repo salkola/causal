@@ -91,19 +91,20 @@ def print_evaluation_summary(models_results, true_effect):
     oracle_val = oracle_policy_value(true_effect)
     ranked = sorted(models_results, key=lambda x: x["qini_auc_excess"], reverse=True)
     d = METRIC_DECIMALS
+    # Fixed-width numeric formatting: show '-' when negative, no '+' when positive.
+    width = d + 3
+    fmt = lambda v: f"{v:>{width}.{d}f}"
     null_ref = models_results[0]["qini_null_median"]
 
     print(f"\n{EVALUATION_REPORT_TITLE}\n")
-    print(f"Oracle policy value (true τ, top fraction): {oracle_val:.{d}f}\n")
+    print(f"Oracle policy value (true τ, top fraction): {fmt(oracle_val)}\n")
     print("(Holdout. Qini raw = Hajek IPW Qini AUC on test; Qini Δ = raw minus median")
     print(
-        f" of {QINI_NULL_DRAWS} random-ranking AUCs ({null_ref:.{d}f} on this fold). "
+        f" of {QINI_NULL_DRAWS} random-ranking AUCs ({fmt(null_ref)} on this fold). "
         "Ranked by Qini Δ."
     )
-    print(
-        " Random row: Qini raw = that null median and Δ = 0 (baseline); "
-        "Policy/Corr still use random scores; Qini curve uses random scores."
-    )
+    print(" Random row: Qini raw = that null median and Δ = 0 (baseline); ")
+    print(" Policy/Corr still use random scores; Qini curve uses random scores.")
     print(" ê(X) for IPW fit on train only. Policy (IPW obs) = Hajek effect in top slice;")
     print(" Policy (true τ) = mean simulator τ in that slice — not IPW-adjusted.)\n")
 
@@ -111,13 +112,13 @@ def print_evaluation_summary(models_results, true_effect):
         pol_true = model_policy_value(true_effect, r["uplift"])
         regret = true_regret(r["uplift"], true_effect)
         print(f"{i + 1}. {r['name']}")
-        print(f"   Qini Δ (vs null)  : {r['qini_auc_excess']:.{d}f}")
-        print(f"   Qini raw          : {r['qini_auc_raw']:.{d}f}")
-        print(f"   Policy (IPW obs)  : {r['policy_value']:.{d}f}")
-        print(f"   Policy (true τ)   : {pol_true:.{d}f}")
-        print(f"   Regret (true τ)   : {regret:.{d}f}")
-        print(f"   Avg uplift        : {r['avg_uplift']:.{d}f}")
-        print(f"   Corr (true)       : {r['corr']:.{d}f}")
+        print(f"   Qini Δ (vs null): {fmt(r['qini_auc_excess'])}")
+        print(f"   Qini raw        : {fmt(r['qini_auc_raw'])}")
+        print(f"   Policy (IPW obs): {fmt(r['policy_value'])}")
+        print(f"   Policy (true τ) : {fmt(pol_true)}")
+        print(f"   Regret (true τ) : {fmt(regret)}")
+        print(f"   Avg uplift      : {fmt(r['avg_uplift'])}")
+        print(f"   Corr (true)     : {fmt(r['corr'])}")
         print("")
 
 

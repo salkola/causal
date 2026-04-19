@@ -1,10 +1,10 @@
 """Project-wide constants for simulation, models, and evaluation."""
 
-# --- Randomness ---
-RANDOM_SEED = 42
+# Randomness
+RANDOM_SEED = 0
 
-# --- Data generation (ads DGP) ---
-N_SAMPLES_DEFAULT = 50_000
+# Data generation (ads DGP)
+N_SAMPLES_DEFAULT = 300_000
 
 BETA_INTENT_A = 2
 BETA_INTENT_B = 5
@@ -25,7 +25,7 @@ CATE_INTENT_SLOPE = 0.10
 PROB_CLIP_MIN = 0.0
 PROB_CLIP_MAX = 1.0
 
-# --- Gradient boosting (uplift learners) ---
+# Gradient boosting (uplift learners)
 GB_N_ESTIMATORS = 100
 GB_LEARNING_RATE = 0.05
 GB_MAX_DEPTH = 3
@@ -42,8 +42,8 @@ GRADIENT_BOOSTING_PARAMS = {
 PROPENSITY_CLIP_LOW = 0.01
 PROPENSITY_CLIP_HIGH = 0.99
 
-# --- Evaluation / metrics ---
-HOLDOUT_TEST_SIZE = 0.2
+# Evaluation / metrics
+HOLDOUT_TEST_SIZE = 0.4
 DEFAULT_POLICY_TOP_K = 0.2
 QINI_N_BINS = 20
 # Smallest *nominal* fraction on the grid (actual first point may be larger if min prefix applies).
@@ -58,11 +58,11 @@ QINI_PLOT_NULL_BAND_DRAWS = 100
 
 SAFE_CORR_STD_EPS = 1e-8
 
-METRIC_DECIMALS = 4
+METRIC_DECIMALS = 3
 EVALUATION_REPORT_TITLE = "================ CAUSAL ML EVALUATION REPORT ================"
 
-# --- Decision table ---
+# Decision table
 UPLIFT_BUCKET_COUNT = 5
 
-# --- Baselines ---
+# Baselines
 MEAN_UPLIFT_VALUE = 0.03
