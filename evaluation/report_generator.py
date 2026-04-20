@@ -32,7 +32,7 @@ def plot_uplift_distribution(models_results):
         plt.hist(r["uplift"], bins=50, alpha=0.4, label=r["name"], density=True)
 
     plt.title("Uplift Distribution by Model")
-    plt.xlim(-0.2, 0.2)
+    plt.xlim(-0.1, 0.15)
     plt.xlabel("Predicted uplift")
     plt.ylabel("Density")
     plt.legend()
