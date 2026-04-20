@@ -32,6 +32,7 @@ def plot_uplift_distribution(models_results):
         plt.hist(r["uplift"], bins=50, alpha=0.4, label=r["name"], density=True)
 
     plt.title("Uplift Distribution by Model")
+    plt.xlim(-0.2, 0.2)
     plt.xlabel("Predicted uplift")
     plt.ylabel("Density")
     plt.legend()
@@ -91,6 +92,7 @@ def print_evaluation_summary(models_results, true_effect):
     """
     oracle_val = oracle_policy_value(true_effect)
     ranked = sorted(models_results, key=lambda x: x["qini_auc_excess"], reverse=True)
+    n_splits = int(models_results[0].get("n_splits", 1))
     d = METRIC_DECIMALS
     # Fixed-width numeric formatting: show '-' when negative, no '+' when positive.
     width = d + 3
@@ -99,22 +101,30 @@ def print_evaluation_summary(models_results, true_effect):
 
     print(f"\n{EVALUATION_REPORT_TITLE}\n")
     print(f"Oracle policy value (true τ, top fraction): {fmt(oracle_val)}\n")
-    print("(Holdout. Qini raw = Hajek IPW Qini AUC on test; Qini Δ = raw minus median")
+    split_label = "Holdout" if n_splits == 1 else f"Holdout Monte Carlo: {n_splits} splits"
+    print(f"{split_label}\n")
+    print("Qini raw: Hajek-IPW Qini AUC on test.")
     print(
-        f" of {QINI_NULL_DRAWS} random-ranking AUCs ({fmt(null_ref)} on this fold). "
-        "Ranked by Qini Δ."
+        f"Qini Δ: Qini raw minus the median of {QINI_NULL_DRAWS} random-ranking AUCs "
+        f"({fmt(null_ref)}, averaged across splits)."
     )
-    print(" Random row: Qini raw = that null median and Δ = 0 (baseline); ")
+    print("Models are ranked by Qini Δ.\n")
+    print("Random baseline:")
+    print("- Qini raw is set to that null median.")
+    print("- Qini Δ is fixed at 0.")
     print(
-        f" Policy/Corr use random Gaussian scores (σ = SD(τ) under Beta DGP = {RANDOM_POLICY_SCORE_STD:.{METRIC_DECIMALS}f}); "
-        "Qini curve uses the same scores."
+        f"- Policy/Corr use random Gaussian scores (σ = SD(τ) under Beta DGP = "
+        f"{RANDOM_POLICY_SCORE_STD:.{METRIC_DECIMALS}f})."
     )
-    print(" ê(X) for IPW fit on train only. Policy (IPW obs) = Hajek effect in top slice;")
-    print(" Policy (true τ) = mean simulator τ in that slice — not IPW-adjusted.)\n")
+    print("- Qini curve uses the same random scores.\n")
+    print("IPW details:")
+    print("- ê(X) for IPW is fit on train only.")
+    print("- Policy (IPW obs): Hajek effect in the top-scored slice.")
+    print("- Policy (true τ): mean simulator τ in that slice (not IPW-adjusted).\n")
 
     for i, r in enumerate(ranked):
-        pol_true = model_policy_value(true_effect, r["uplift"])
-        regret = true_regret(r["uplift"], true_effect)
+        pol_true = r.get("policy_true", model_policy_value(true_effect, r["uplift"]))
+        regret = r.get("regret_true", true_regret(r["uplift"], true_effect))
         print(f"{i + 1}. {r['name']}")
         print(f"   Qini Δ (vs null): {fmt(r['qini_auc_excess'])}")
         print(f"   Qini raw        : {fmt(r['qini_auc_raw'])}")

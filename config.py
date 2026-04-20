@@ -6,7 +6,7 @@ import math
 RANDOM_SEED = 0
 
 # Data generation (ads DGP)
-N_SAMPLES_DEFAULT = 300_000
+N_SAMPLES_DEFAULT = 400_000
 
 BETA_INTENT_A = 2
 BETA_INTENT_B = 5
@@ -46,6 +46,7 @@ PROPENSITY_CLIP_HIGH = 0.99
 
 # Evaluation / metrics
 HOLDOUT_TEST_SIZE = 0.4
+MONTE_CARLO_SPLITS = 3
 DEFAULT_POLICY_TOP_K = 0.2
 QINI_N_BINS = 20
 # Smallest *nominal* fraction on the grid (actual first point may be larger if min prefix applies).
