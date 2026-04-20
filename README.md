@@ -8,15 +8,48 @@ This repository trains and evaluates **uplift / heterogeneous treatment effect**
 - Report **ranking quality** (Qini-style curves and excess AUC vs random), **policy value** in the top-scored slice, **calibration** of predictions against Hajek IPW effects, and agreement with **true** `τ` where available.
 - Support reproducible **holdout Monte Carlo** evaluation (multiple train/test splits with stratified treatment).
 
+## Treatment and user response
+
+### Core concepts
+
+- **Treatment is binary:** each user has `T = 0` (no treatment) or `T = 1` (treated).
+- **Treatment is applied per user:** each row receives its own treatment assignment.
+- **Users respond differently:** uplift is heterogeneous, so treatment lift is not constant across users.
+- **`τ` is the per-user causal effect:** `τ(x) = E[Y(1) - Y(0) | X=x]`.
+- **Interpretation:** for the same user profile `x`, `τ(x)` is expected conversion **with treatment minus without treatment**.
+- **Simulator truth:** `τ(X) = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent`, so users with different `intent` values can have different treatment lift.
+
+### How treatment is applied in this project
+
+- In data generation, treatment is assigned probabilistically:  
+  `P(T=1 | X) = 0.1 + 0.7 * intent` (biased assignment).
+- Outcome is sampled as binary conversion from baseline risk plus treatment effect, where treatment effect is:  
+  `τ(X) = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent`.
+- In evaluation, models output uplift scores on holdout users.
+- A policy is applied by treating the top-scored fraction (default 20%).
+- Policy effect is measured in two ways: **Observed/IPW** (Hajek-IPW estimate from observed `Y` and `T`) and **True** (mean simulator `τ` in that top slice, as an oracle-style check).
+
 ## Models
 
-| Model | Role |
-|--------|------|
-| **T-Learner** | Separate outcome models for treated and control; uplift is the difference in predicted conversion probabilities. |
-| **X-Learner** | Two-stage approach using imputed treatment effects on treated and control arms, then combined for uplift. |
-| **DR-Learner** | Doubly robust pseudo-outcome (propensity + outcome models, then regression on the DR target) for CATE. |
-| **R-Learner** | Residual-on-residual CATE learner that removes baseline outcome and treatment propensity, then fits treatment effect from residualized signal. |
-| **Random** | Baseline that uses random scores (Gaussian with `σ` matched to the scale of `τ` under the Beta DGP) for ranking and Qini curves; used to define the **null** for Qini excess. |
+- **T-Learner**
+  - Trains one outcome model on treated users and one on control users.
+  - Predicted uplift: `P(Y=1 | X, T=1) - P(Y=1 | X, T=0)`.
+- **X-Learner**
+  - First learns treated/control outcome models.
+  - Builds imputed treatment effects for each group.
+  - Learns effect models from those imputed targets, then combines them.
+- **DR-Learner**
+  - Learns propensity `e(X)` and outcome models `μ1(X)`, `μ0(X)`.
+  - Builds a doubly robust pseudo-outcome and regresses it to estimate `τ(X)`.
+  - Typically more robust to nuisance-model error than simpler approaches.
+- **R-Learner**
+  - Residualizes outcome and treatment:
+    - outcome residual: `Y - m(X)`
+    - treatment residual: `T - e(X)`
+  - Learns `τ(X)` from the residual-on-residual signal, with weighting by `(T-e(X))^2`.
+- **Random baseline**
+  - Does not learn treatment effect.
+  - Uses random scores (Gaussian with `σ` matched to the scale of `τ` under the Beta DGP) for ranking and Qini curves.
 
 ## Metrics
 
