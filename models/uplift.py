@@ -82,3 +82,42 @@ class DRLearner:
 
     def predict_uplift(self, X):
         return self.final_model.predict(X)
+
+
+class RLearner:
+    """
+    R-learner CATE via residual-on-residual regression:
+      (Y - m(X)) ≈ (T - e(X)) * τ(X)
+    We fit a final model on pseudo-target (Y - m)/(T - e) with
+    sample weights (T - e)^2.
+    """
+
+    def __init__(self):
+        self.propensity = GradientBoostingClassifier(**gb_params)
+        self.outcome = GradientBoostingRegressor(**gb_params)
+        self.final_model = GradientBoostingRegressor(**gb_params)
+
+    def fit(self, X, t, y):
+        t = np.asarray(t, dtype=float)
+        y = np.asarray(y, dtype=float)
+
+        self.propensity.fit(X, t.astype(int))
+        e = np.clip(
+            self.propensity.predict_proba(X)[:, 1],
+            PROPENSITY_CLIP_LOW,
+            PROPENSITY_CLIP_HIGH,
+        )
+
+        self.outcome.fit(X, y)
+        m = self.outcome.predict(X)
+
+        w = t - e
+        # Clip denominator away from 0 to avoid exploding pseudo-targets.
+        w_safe = np.where(np.abs(w) < 1e-3, np.sign(w) * 1e-3 + (w == 0) * 1e-3, w)
+        pseudo = (y - m) / w_safe
+        sample_weight = np.square(w)
+
+        self.final_model.fit(X, pseudo, sample_weight=sample_weight)
+
+    def predict_uplift(self, X):
+        return self.final_model.predict(X)

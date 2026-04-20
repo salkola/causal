@@ -27,9 +27,10 @@ from evaluation.metrics import (
 def plot_uplift_distribution(models_results):
 
     plt.figure()
+    bin_edges = np.arange(-0.1, 0.15 + 0.004, 0.004)
 
     for r in models_results:
-        plt.hist(r["uplift"], bins=50, alpha=0.4, label=r["name"], density=True)
+        plt.hist(r["uplift"], bins=bin_edges, alpha=0.4, label=r["name"], density=True)
 
     plt.title("Uplift Distribution by Model")
     plt.xlim(-0.1, 0.15)
@@ -91,7 +92,11 @@ def print_evaluation_summary(models_results, true_effect):
     One ranked table: Qini excess vs random null, raw Qini, policies, regret, corr.
     """
     oracle_val = oracle_policy_value(true_effect)
-    ranked = sorted(models_results, key=lambda x: x["qini_auc_excess"], reverse=True)
+    ranked = sorted(
+        models_results,
+        key=lambda x: (round(x["qini_auc_excess"], METRIC_DECIMALS), x["corr"]),
+        reverse=True,
+    )
     n_splits = int(models_results[0].get("n_splits", 1))
     d = METRIC_DECIMALS
     # Fixed-width numeric formatting: show '-' when negative, no '+' when positive.
@@ -108,7 +113,7 @@ def print_evaluation_summary(models_results, true_effect):
         f"Qini Δ: Qini raw minus the median of {QINI_NULL_DRAWS} random-ranking AUCs "
         f"({fmt(null_ref)}, averaged across splits)."
     )
-    print("Models are ranked by Qini Δ.\n")
+    print("Models are ranked by Qini Δ (ties broken by Corr (true)).\n")
     print("Random baseline:")
     print("- Qini raw is set to that null median.")
     print("- Qini Δ is fixed at 0.")

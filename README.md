@@ -4,7 +4,7 @@ This repository trains and evaluates **uplift / heterogeneous treatment effect**
 
 ## Purpose
 
-- Compare **meta-learners** (T-, X-, DR-Learner) that predict per-unit uplift against a **random ranking** baseline.
+- Compare **meta-learners** (T-, X-, DR-, R-Learner) that predict per-unit uplift against a **random ranking** baseline.
 - Report **ranking quality** (Qini-style curves and excess AUC vs random), **policy value** in the top-scored slice, **calibration** of predictions against Hajek IPW effects, and agreement with **true** `τ` where available.
 - Support reproducible **holdout Monte Carlo** evaluation (multiple train/test splits with stratified treatment).
 
@@ -15,13 +15,14 @@ This repository trains and evaluates **uplift / heterogeneous treatment effect**
 | **T-Learner** | Separate outcome models for treated and control; uplift is the difference in predicted conversion probabilities. |
 | **X-Learner** | Two-stage approach using imputed treatment effects on treated and control arms, then combined for uplift. |
 | **DR-Learner** | Doubly robust pseudo-outcome (propensity + outcome models, then regression on the DR target) for CATE. |
+| **R-Learner** | Residual-on-residual CATE learner that removes baseline outcome and treatment propensity, then fits treatment effect from residualized signal. |
 | **Random** | Baseline that uses random scores (Gaussian with `σ` matched to the scale of `τ` under the Beta DGP) for ranking and Qini curves; used to define the **null** for Qini excess. |
 
 ## Metrics
 
 - **Oracle policy value (true `τ`, top fraction):** Best achievable mean `τ` in the top policy fraction using the true CATE—an upper bound for ranking by `τ`.
 - **Qini raw:** Area under the **Hajek IPW** incremental-effect curve on the test set as the targeted fraction grows (higher is better).
-- **Qini Δ:** Qini raw minus the **median** of 100 **random-ranking** Qini AUCs (null); averaged across holdout splits. Models are **ranked by Qini Δ**.
+- **Qini Δ:** Qini raw minus the **median** of 100 **random-ranking** Qini AUCs (null); averaged across holdout splits. Models are **ranked by Qini Δ**, with `Corr (true)` used to break ties.
 - **Random baseline:** Qini raw is set to that null median; Qini Δ is **0**. Policy and correlation use random Gaussian scores; the Qini curve uses the same scores.
 - **Policy (IPW obs):** Hajek **observed** treatment effect in the top-scored slice (propensity `ê(X)` for IPW is fit on **train only**).
 - **Policy (true `τ`):** Mean **simulator** `τ` in that same top-scored slice (not IPW-adjusted).
@@ -35,24 +36,25 @@ This repository trains and evaluates **uplift / heterogeneous treatment effect**
 
 **Holdout Monte Carlo:** 3 splits  
 
-**Qini Δ:** Qini raw minus the median of 100 random-ranking AUCs (**0.036**, averaged across splits). Models ranked by Qini Δ.
+**Qini Δ:** Qini raw minus the median of 100 random-ranking AUCs (**0.036**, averaged across splits). Models ranked by Qini Δ, with Corr (true) as tie-breaker.
 
 | Rank | Model | Qini Δ (vs null) | Qini raw | Policy (IPW obs) | Policy (true `τ`) | Regret (true `τ`) | Avg uplift | Corr (true) |
 |------|--------|---------------------------|----------|------------------|------------------------|------------------------|------------|-------------|
 | 1 | X-Learner | 0.013 | 0.049 | 0.064 | 0.063 | 0.000 | 0.038 | 0.929 |
-| 2 | DR-Learner | 0.012 | 0.049 | 0.063 | 0.063 | 0.001 | 0.038 | 0.873 |
-| 3 | T-Learner | 0.012 | 0.048 | 0.064 | 0.062 | 0.001 | 0.039 | 0.853 |
-| 4 | Random | 0.000 | 0.036 | 0.035 | 0.039 | 0.025 | −0.000 | 0.001 |
+| 2 | R-Learner | 0.012 | 0.049 | 0.063 | 0.062 | 0.001 | 0.038 | 0.875 |
+| 3 | DR-Learner | 0.012 | 0.049 | 0.063 | 0.063 | 0.001 | 0.038 | 0.873 |
+| 4 | T-Learner | 0.012 | 0.048 | 0.064 | 0.062 | 0.001 | 0.039 | 0.853 |
+| 5 | Random | 0.000 | 0.036 | 0.035 | 0.039 | 0.025 | −0.000 | 0.001 |
 
 ### How to read these results
 
-- **Primary ranking metric:** models are ordered by **Qini Δ** (excess over random-null Qini AUC).
+- **Primary ranking metric:** models are ordered by **Qini Δ** (excess over random-null Qini AUC), with `Corr (true)` used to break ties.
 - **Corr (true):** a global alignment check between predicted uplift and true per-row effect `τ` across the full test set. Higher is better.
 - **Policy / regret:** practical top-slice quality. Higher `Policy (true τ)` and lower `Regret (true τ)` indicate better targeting decisions.
 
 ### Key takeaway
 
-X-, DR-, and T-Learners all beat the random baseline on Qini Δ and achieve policy value near the oracle on true `τ`. X-Learner has the strongest overall alignment by `Corr (true)`, while Random stays near zero correlation and has much higher regret.
+X-, R-, DR-, and T-Learners all beat the random baseline on Qini Δ and achieve policy value near the oracle on true `τ`. X-Learner has the strongest overall alignment by `Corr (true)`, with R-Learner and DR-Learner close behind, while Random stays near zero correlation and has much higher regret.
 
 ## Figures
 

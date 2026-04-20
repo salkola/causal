@@ -13,7 +13,7 @@ from config import (
     RANDOM_SEED,
 )
 from data.simulate_ads import generate_ads_data
-from models.uplift import TLearner, XLearner, DRLearner
+from models.uplift import TLearner, XLearner, DRLearner, RLearner
 from models.baselines import RandomPolicy
 
 from evaluation.leaderboard import evaluate_model
@@ -42,6 +42,7 @@ def main():
         ("T-Learner", TLearner),
         ("X-Learner", XLearner),
         ("DR-Learner", DRLearner),
+        ("R-Learner", RLearner),
         ("Random", RandomPolicy),
     ]
     by_model = {
