@@ -1,6 +1,10 @@
 # Causal
 
-This repository trains and evaluates **uplift / heterogeneous treatment effect** models on a simulated digital-ads-style dataset. Features include **intent** (Beta-distributed) and **context** (Gaussian); treatment assignment is **biased** with respect to intent, and conversion is binary. The simulator exposes the **true conditional average treatment effect (CATE)** `τ(X) = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent`, which makes it possible to score models on both **observed (IPW-adjusted)** outcomes and **oracle** benchmarks.
+This repository trains and evaluates **uplift / heterogeneous treatment effect** models on a simulated digital-ads-style dataset. Features include **intent** (Beta-distributed) and **context** (Gaussian); treatment assignment is **biased** with respect to intent, and conversion is binary. The outcome variable is `Y`, where `Y=1` means converted and `Y=0` means not converted. The simulator exposes the **true conditional average treatment effect (CATE)**
+
+`τ(X) = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent`,
+
+which makes it possible to score models on both **observed (IPW-adjusted)** outcomes and **oracle** benchmarks.
 
 ## Purpose
 
@@ -21,9 +25,10 @@ This repository trains and evaluates **uplift / heterogeneous treatment effect**
 
 ### How treatment is applied in this project
 
-- In data generation, treatment is assigned probabilistically:  
-  `P(T=1 | X) = 0.1 + 0.7 * intent` (biased assignment).
-- Outcome is sampled as binary conversion from baseline risk plus treatment effect, where treatment effect is:  
+- In data generation, treatment is assigned probabilistically:
+  `P(T=1 | X) = TREATMENT_PROB_INTERCEPT + TREATMENT_PROB_SLOPE * intent`
+  (biased assignment).
+- Outcome is sampled as binary conversion from baseline risk plus treatment effect, where treatment effect is:
   `τ(X) = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent`.
 - In evaluation, models output uplift scores on holdout users.
 - A policy is applied by treating the top-scored fraction (default 20%).
