@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Callable
+
 import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
@@ -21,7 +25,11 @@ from evaluation.metrics import model_policy_value, qini_null_median_auc, true_re
 from evaluation.report_generator import generate_report
 
 
-def fit_eval_propensity(X_train, t_train, X_test):
+def fit_eval_propensity(
+    X_train: np.ndarray,
+    t_train: np.ndarray,
+    X_test: np.ndarray,
+) -> np.ndarray:
     """Propensity for IPW metrics: fit on train only, clip on test."""
     m = GradientBoostingClassifier(**GRADIENT_BOOSTING_PARAMS)
     m.fit(X_train, t_train)
@@ -29,7 +37,7 @@ def fit_eval_propensity(X_train, t_train, X_test):
     return np.clip(e, PROPENSITY_CLIP_LOW, PROPENSITY_CLIP_HIGH)
 
 
-def main():
+def main() -> None:
 
     df = generate_ads_data()
 
@@ -38,14 +46,14 @@ def main():
     y = df["conversion"].values
     true_effect = CATE_INTERCEPT + CATE_INTENT_SLOPE * df["intent"].values
 
-    model_specs = [
+    model_specs: list[tuple[str, Callable[[], Any]]] = [
         ("T-Learner", TLearner),
         ("X-Learner", XLearner),
         ("DR-Learner", DRLearner),
         ("R-Learner", RLearner),
         ("Random", RandomPolicy),
     ]
-    by_model = {
+    by_model: dict[str, dict[str, list[Any]]] = {
         name: {
             "qini_auc_raw": [],
             "qini_auc_excess": [],
@@ -62,7 +70,10 @@ def main():
         for name, _ in model_specs
     }
 
-    y_eval_all, t_eval_all, true_eval_all, e_eval_all = [], [], [], []
+    y_eval_all: list[np.ndarray] = []
+    t_eval_all: list[np.ndarray] = []
+    true_eval_all: list[np.ndarray] = []
+    e_eval_all: list[np.ndarray] = []
     idx = np.arange(len(y))
 
     for split_i in range(MONTE_CARLO_SPLITS):
@@ -126,7 +137,7 @@ def main():
     true_eval = np.concatenate(true_eval_all)
     e_eval = np.concatenate(e_eval_all)
 
-    models_results = []
+    models_results: list[dict[str, Any]] = []
     for name, _ in model_specs:
         b = by_model[name]
         xs_ref = b["xs"][0]

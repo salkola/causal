@@ -1,5 +1,7 @@
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from __future__ import annotations
+
 import numpy as np
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 
 from config import GRADIENT_BOOSTING_PARAMS, PROPENSITY_CLIP_HIGH, PROPENSITY_CLIP_LOW
 
@@ -7,15 +9,15 @@ gb_params = GRADIENT_BOOSTING_PARAMS
 
 
 class TLearner:
-    def __init__(self):
+    def __init__(self) -> None:
         self.treated = GradientBoostingClassifier(**gb_params)
         self.control = GradientBoostingClassifier(**gb_params)
 
-    def fit(self, X, t, y):
+    def fit(self, X: np.ndarray, t: np.ndarray, y: np.ndarray) -> None:
         self.treated.fit(X[t == 1], y[t == 1])
         self.control.fit(X[t == 0], y[t == 0])
 
-    def predict_uplift(self, X):
+    def predict_uplift(self, X: np.ndarray) -> np.ndarray:
         return (
             self.treated.predict_proba(X)[:, 1]
             - self.control.predict_proba(X)[:, 1]
@@ -23,11 +25,11 @@ class TLearner:
 
 
 class XLearner:
-    def __init__(self):
+    def __init__(self) -> None:
         self.m0 = GradientBoostingRegressor(**gb_params)
         self.m1 = GradientBoostingRegressor(**gb_params)
 
-    def fit(self, X, t, y):
+    def fit(self, X: np.ndarray, t: np.ndarray, y: np.ndarray) -> None:
         X0, y0 = X[t == 0], y[t == 0]
         X1, y1 = X[t == 1], y[t == 1]
 
@@ -43,7 +45,7 @@ class XLearner:
         self.m2.fit(X1, d1)
         self.m3.fit(X0, d0)
 
-    def predict_uplift(self, X):
+    def predict_uplift(self, X: np.ndarray) -> np.ndarray:
         return 0.5 * (self.m2.predict(X) + self.m3.predict(X))
 
 
@@ -54,13 +56,13 @@ class DRLearner:
     with separate μ₁, μ₀ (binary Y → classifiers) and final regression on Γ.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.propensity = GradientBoostingClassifier(**gb_params)
         self.mu1 = GradientBoostingClassifier(**gb_params)
         self.mu0 = GradientBoostingClassifier(**gb_params)
         self.final_model = GradientBoostingRegressor(**gb_params)
 
-    def fit(self, X, t, y):
+    def fit(self, X: np.ndarray, t: np.ndarray, y: np.ndarray) -> None:
         t = np.asarray(t)
         y = np.asarray(y, dtype=float)
 
@@ -80,7 +82,7 @@ class DRLearner:
         dr = m1 - m0 + t * (y - m1) / e - (1.0 - t) * (y - m0) / (1.0 - e)
         self.final_model.fit(X, dr)
 
-    def predict_uplift(self, X):
+    def predict_uplift(self, X: np.ndarray) -> np.ndarray:
         return self.final_model.predict(X)
 
 
@@ -92,12 +94,12 @@ class RLearner:
     sample weights (T - e)^2.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.propensity = GradientBoostingClassifier(**gb_params)
         self.outcome = GradientBoostingRegressor(**gb_params)
         self.final_model = GradientBoostingRegressor(**gb_params)
 
-    def fit(self, X, t, y):
+    def fit(self, X: np.ndarray, t: np.ndarray, y: np.ndarray) -> None:
         t = np.asarray(t, dtype=float)
         y = np.asarray(y, dtype=float)
 
@@ -119,5 +121,5 @@ class RLearner:
 
         self.final_model.fit(X, pseudo, sample_weight=sample_weight)
 
-    def predict_uplift(self, X):
+    def predict_uplift(self, X: np.ndarray) -> np.ndarray:
         return self.final_model.predict(X)

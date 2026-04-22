@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 
@@ -23,14 +25,21 @@ from config import (
 # -----------------------------
 # Structural data generating process
 # -----------------------------
-def outcome(intent, context, treatment):
+def outcome(
+    intent: np.ndarray,
+    context: np.ndarray,
+    treatment: np.ndarray,
+) -> np.ndarray:
     base = OUTCOME_BASE + OUTCOME_INTENT_COEF * intent + OUTCOME_CONTEXT_COEF * context
     treatment_effect = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent
     p = base + treatment * treatment_effect
     return p
 
 
-def generate_ads_data(n=N_SAMPLES_DEFAULT, seed=RANDOM_SEED):
+def generate_ads_data(
+    n: int = N_SAMPLES_DEFAULT,
+    seed: int = RANDOM_SEED,
+) -> pd.DataFrame:
     np.random.seed(seed)
 
     intent = np.random.beta(BETA_INTENT_A, BETA_INTENT_B, n)
@@ -55,7 +64,7 @@ def generate_ads_data(n=N_SAMPLES_DEFAULT, seed=RANDOM_SEED):
 # -----------------------------
 # TRUE causal quantity (ATE)
 # -----------------------------
-def true_ate():
+def true_ate() -> float:
     """
     Analytical ATE:
     E[ (0.01 + 0.10 * intent) ]

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 
 from config import SAFE_CORR_STD_EPS
@@ -7,7 +11,7 @@ from config import SAFE_CORR_STD_EPS
 # SAFE CORRELATION
 # ============================================================
 
-def safe_corr(x, y):
+def safe_corr(x: np.ndarray, y: np.ndarray) -> float:
     """
     Stable Pearson correlation.
     Returns 0.0 when x has no variance (e.g., Random policy).
@@ -18,7 +22,7 @@ def safe_corr(x, y):
     if np.std(x) < SAFE_CORR_STD_EPS or np.std(y) < SAFE_CORR_STD_EPS:
         return 0.0
 
-    return np.corrcoef(x, y)[0, 1]
+    return float(np.corrcoef(x, y)[0, 1])
 
 
 # ============================================================
@@ -26,18 +30,18 @@ def safe_corr(x, y):
 # ============================================================
 
 def evaluate_model(
-    name,
-    model,
-    X_train,
-    t_train,
-    y_train,
-    X_test,
-    t_test,
-    y_test,
-    true_effect_test,
-    propensity_test,
-    qini_null_median,
-):
+    name: str,
+    model: Any,
+    X_train: np.ndarray,
+    t_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    t_test: np.ndarray,
+    y_test: np.ndarray,
+    true_effect_test: np.ndarray,
+    propensity_test: np.ndarray,
+    qini_null_median: float,
+) -> dict[str, Any]:
     """
     Fit on train; metrics and predictions on holdout.
     Qini and policy (obs) use Hajek IPW with propensity_test (e.g. ê from train).

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 
 from config import MEAN_UPLIFT_VALUE, RANDOM_POLICY_SCORE_STD, RANDOM_SEED
@@ -9,16 +11,26 @@ class RandomPolicy:
     Default σ is RANDOM_POLICY_SCORE_STD = SD(τ) under the Beta-intent DGP in config.
     """
 
-    def __init__(self, seed=RANDOM_SEED, score_std=RANDOM_POLICY_SCORE_STD):
+    def __init__(
+        self,
+        seed: int = RANDOM_SEED,
+        score_std: float = RANDOM_POLICY_SCORE_STD,
+    ) -> None:
         self._rng = np.random.default_rng(seed)
         self._score_std = float(score_std)
 
-    def fit(self, X, t, y):
+    def fit(
+        self,
+        X: np.ndarray,
+        t: np.ndarray,
+        y: np.ndarray,
+    ) -> None:
         pass
 
-    def predict_uplift(self, X):
+    def predict_uplift(self, X: np.ndarray) -> np.ndarray:
         return self._rng.normal(0.0, self._score_std, size=len(X))
 
+
 class MeanUplift:
-    def predict(self, X):
+    def predict(self, X: np.ndarray) -> np.ndarray:
         return np.ones(len(X)) * MEAN_UPLIFT_VALUE

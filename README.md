@@ -117,7 +117,7 @@ X-, R-, DR-, and T-Learners all beat the random baseline on Qini Δ and achieve 
 ## Running
 
 ```bash
-python main.py
+python3 main.py
 ```
 
 This fits learners, aggregates metrics across `MONTE_CARLO_SPLITS` holdouts (see `config.py`), and invokes the report/plotting utilities in `evaluation/report_generator.py`.

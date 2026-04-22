@@ -1,5 +1,7 @@
 """Project-wide constants for simulation, models, and evaluation."""
 
+from __future__ import annotations
+
 import math
 
 # Randomness
@@ -71,7 +73,7 @@ UPLIFT_BUCKET_COUNT = 5
 MEAN_UPLIFT_VALUE = 0.03
 
 
-def _beta_variance(a, b):
+def _beta_variance(a: float, b: float) -> float:
     return (a * b) / ((a + b) ** 2 * (a + b + 1))
 
 

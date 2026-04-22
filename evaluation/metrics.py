@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import auc
@@ -14,7 +16,12 @@ from config import (
 )
 
 
-def hajek_ate(y, t, propensity, mask):
+def hajek_ate(
+    y: np.ndarray,
+    t: np.ndarray,
+    propensity: np.ndarray,
+    mask: np.ndarray,
+) -> float:
     """
     Hajek (stabilized IPW) difference in means on the subset where mask is True.
     """
@@ -37,7 +44,13 @@ def hajek_ate(y, t, propensity, mask):
     return float(np.sum(w1 * y_s) / den1 - np.sum(w0 * y_s) / den0)
 
 
-def policy_value_ipw(y, t, score, propensity, top_k=DEFAULT_POLICY_TOP_K):
+def policy_value_ipw(
+    y: np.ndarray,
+    t: np.ndarray,
+    score: np.ndarray,
+    propensity: np.ndarray,
+    top_k: float = DEFAULT_POLICY_TOP_K,
+) -> float:
     """Top-k by score; Hajek IPW effect in that slice (needs e(X) per row)."""
     y = np.asarray(y)
     t = np.asarray(t)
@@ -51,7 +64,12 @@ def policy_value_ipw(y, t, score, propensity, top_k=DEFAULT_POLICY_TOP_K):
     return hajek_ate(y, t, propensity, mask)
 
 
-def policy_value(y, t, score, top_k=DEFAULT_POLICY_TOP_K):
+def policy_value(
+    y: np.ndarray,
+    t: np.ndarray,
+    score: np.ndarray,
+    top_k: float = DEFAULT_POLICY_TOP_K,
+) -> float:
     idx = np.argsort(score)[::-1]
     k = max(1, int(top_k * len(score)))
 
@@ -66,10 +84,15 @@ def policy_value(y, t, score, top_k=DEFAULT_POLICY_TOP_K):
     treated_rate = y[selected][treated].mean()
     control_rate = y[selected][control].mean()
 
-    return treated_rate - control_rate
+    return float(treated_rate - control_rate)
 
 
-def qini_curve(y_true, uplift, treatment, n_bins=QINI_N_BINS):
+def qini_curve(
+    y_true: np.ndarray,
+    uplift: np.ndarray,
+    treatment: np.ndarray,
+    n_bins: int = QINI_N_BINS,
+) -> tuple[np.ndarray, np.ndarray]:
     df = pd.DataFrame({
         "y": y_true,
         "uplift": uplift,
@@ -91,12 +114,18 @@ def qini_curve(y_true, uplift, treatment, n_bins=QINI_N_BINS):
         control_rate = control.mean() if len(control) > 0 else global_control_rate
 
         xs.append(k)
-        ys.append(treated_rate - control_rate)
+        ys.append(float(treated_rate - control_rate))
 
     return np.array(xs), np.array(ys)
 
 
-def qini_curve_ipw(y_true, uplift, treatment, propensity, n_bins=QINI_N_BINS):
+def qini_curve_ipw(
+    y_true: np.ndarray,
+    uplift: np.ndarray,
+    treatment: np.ndarray,
+    propensity: np.ndarray,
+    n_bins: int = QINI_N_BINS,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Qini-style curve with Hajek IPW effect at each targeted fraction.
 
@@ -134,17 +163,17 @@ def qini_curve_ipw(y_true, uplift, treatment, propensity, n_bins=QINI_N_BINS):
     return np.array(xs), np.array(ys)
 
 
-def qini_auc(xs, ys):
-    return auc(xs, ys)
+def qini_auc(xs: np.ndarray, ys: np.ndarray) -> float:
+    return float(auc(xs, ys))
 
 
 def qini_null_band_curves(
-    y,
-    t,
-    propensity,
-    n_draws,
-    seed,
-):
+    y: np.ndarray,
+    t: np.ndarray,
+    propensity: np.ndarray,
+    n_draws: int,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Stack Hajek-IPW Qini curves from random rankings; return xs and median / p5 / p95 y.
     """
@@ -164,6 +193,7 @@ def qini_null_band_curves(
             raise ValueError("qini_curve_ipw x grid must match across draws")
         ys_list.append(ys_c)
     mat = np.vstack(ys_list)
+    assert xs_ref is not None
     return (
         xs_ref,
         np.median(mat, axis=0),
@@ -173,12 +203,12 @@ def qini_null_band_curves(
 
 
 def qini_null_median_auc(
-    y,
-    t,
-    propensity,
-    n_draws=QINI_NULL_DRAWS,
-    seed=RANDOM_SEED,
-):
+    y: np.ndarray,
+    t: np.ndarray,
+    propensity: np.ndarray,
+    n_draws: int = QINI_NULL_DRAWS,
+    seed: int = RANDOM_SEED,
+) -> float:
     """
     Median Hajek-IPW Qini AUC over random rankings (same y, t, e as evaluation).
     Used as a variance anchor: single random permutations can beat models by chance.
@@ -196,19 +226,30 @@ def qini_null_median_auc(
     return float(np.median(aucs))
 
 
-def oracle_policy_value(true_effect, top_k=DEFAULT_POLICY_TOP_K):
+def oracle_policy_value(
+    true_effect: np.ndarray,
+    top_k: float = DEFAULT_POLICY_TOP_K,
+) -> float:
     idx = np.argsort(true_effect)[::-1]
     k = max(1, int(top_k * len(true_effect)))
     return float(np.mean(true_effect[idx[:k]]))
 
 
-def model_policy_value(true_effect, model_score, top_k=DEFAULT_POLICY_TOP_K):
+def model_policy_value(
+    true_effect: np.ndarray,
+    model_score: np.ndarray,
+    top_k: float = DEFAULT_POLICY_TOP_K,
+) -> float:
     idx = np.argsort(model_score)[::-1]
     k = max(1, int(top_k * len(true_effect)))
     return float(np.mean(true_effect[idx[:k]]))
 
 
-def true_regret(model_score, true_effect, top_k=DEFAULT_POLICY_TOP_K):
+def true_regret(
+    model_score: np.ndarray,
+    true_effect: np.ndarray,
+    top_k: float = DEFAULT_POLICY_TOP_K,
+) -> float:
     oracle_idx = np.argsort(true_effect)[::-1]
     model_idx = np.argsort(model_score)[::-1]
     k = max(1, int(top_k * len(true_effect)))

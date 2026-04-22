@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import numpy as np
 
-def evaluate_policy(uplift, true_effect):
+
+def evaluate_policy(uplift: np.ndarray, true_effect: np.ndarray) -> float:
     # correlation sanity check
-    return np.corrcoef(uplift, true_effect)[0, 1]
+    return float(np.corrcoef(uplift, true_effect)[0, 1])

@@ -1,5 +1,9 @@
-import numpy as np
+from __future__ import annotations
+
+from typing import Any
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from config import (
@@ -24,7 +28,7 @@ from evaluation.metrics import (
 # UPLIFT DISTRIBUTION PLOT
 # ============================================================
 
-def plot_uplift_distribution(models_results):
+def plot_uplift_distribution(models_results: list[dict[str, Any]]) -> None:
 
     plt.figure()
     bin_edges = np.arange(-0.1, 0.15 + 0.004, 0.004)
@@ -44,7 +48,13 @@ def plot_uplift_distribution(models_results):
 # UPLIFT CALIBRATION (Hajek IPW within score bins)
 # ============================================================
 
-def plot_uplift_calibration(models_results, y, t, propensity, bins=10):
+def plot_uplift_calibration(
+    models_results: list[dict[str, Any]],
+    y: np.ndarray,
+    t: np.ndarray,
+    propensity: np.ndarray,
+    bins: int = 10,
+) -> None:
     y = np.asarray(y, dtype=float)
     t = np.asarray(t)
     propensity = np.asarray(propensity, dtype=float)
@@ -87,7 +97,10 @@ def plot_uplift_calibration(models_results, y, t, propensity, bins=10):
 # REPORT
 # ============================================================
 
-def print_evaluation_summary(models_results, true_effect):
+def print_evaluation_summary(
+    models_results: list[dict[str, Any]],
+    true_effect: np.ndarray,
+) -> None:
     """
     One ranked table: Qini excess vs random null, raw Qini, policies, regret, corr.
     """
@@ -141,7 +154,13 @@ def print_evaluation_summary(models_results, true_effect):
         print("")
 
 
-def generate_report(models_results, y, t, true_effect, propensity):
+def generate_report(
+    models_results: list[dict[str, Any]],
+    y: np.ndarray,
+    t: np.ndarray,
+    true_effect: np.ndarray,
+    propensity: np.ndarray,
+) -> None:
 
     print_evaluation_summary(models_results, true_effect)
 
