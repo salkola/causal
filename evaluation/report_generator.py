@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -9,6 +10,10 @@ import pandas as pd
 from config import (
     EVALUATION_REPORT_TITLE,
     METRIC_DECIMALS,
+    OUTPUT_DIR,
+    OUTPUT_QINI_CURVES,
+    OUTPUT_UPLIFT_CALIBRATION,
+    OUTPUT_UPLIFT_DISTRIBUTION,
     QINI_NULL_DRAWS,
     QINI_PLOT_NULL_BAND_DRAWS,
     RANDOM_POLICY_SCORE_STD,
@@ -22,6 +27,10 @@ from evaluation.metrics import (
     qini_null_band_curves,
     true_regret,
 )
+
+
+def _ensure_output_dir() -> None:
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
 
 # ============================================================
@@ -41,6 +50,8 @@ def plot_uplift_distribution(models_results: list[dict[str, Any]]) -> None:
     plt.xlabel("Predicted uplift")
     plt.ylabel("Density")
     plt.legend()
+    _ensure_output_dir()
+    plt.savefig(OUTPUT_UPLIFT_DISTRIBUTION, dpi=140, bbox_inches="tight")
     plt.show()
 
 
@@ -90,6 +101,8 @@ def plot_uplift_calibration(
     plt.xlabel("Uplift decile (low → high)")
     plt.ylabel("Hajek IPW effect in bin")
     plt.legend()
+    _ensure_output_dir()
+    plt.savefig(OUTPUT_UPLIFT_CALIBRATION, dpi=140, bbox_inches="tight")
     plt.show()
 
 
@@ -197,6 +210,8 @@ def generate_report(
     plt.title("Qini curves (Hajek IPW, holdout)")
     plt.xlabel("Fraction targeted")
     plt.ylabel("IPW incremental effect")
+    _ensure_output_dir()
+    plt.savefig(OUTPUT_QINI_CURVES, dpi=140, bbox_inches="tight")
     plt.show()
 
     plot_uplift_distribution(models_results)

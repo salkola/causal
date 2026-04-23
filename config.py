@@ -66,6 +66,12 @@ SAFE_CORR_STD_EPS = 1e-8
 METRIC_DECIMALS = 3
 EVALUATION_REPORT_TITLE = "================ CAUSAL ML EVALUATION REPORT ================"
 
+# Figures written by `evaluation/report_generator.py` (also referenced in README)
+OUTPUT_DIR = "output"
+OUTPUT_QINI_CURVES = f"{OUTPUT_DIR}/qini-curves.png"
+OUTPUT_UPLIFT_DISTRIBUTION = f"{OUTPUT_DIR}/uplift-distribution.png"
+OUTPUT_UPLIFT_CALIBRATION = f"{OUTPUT_DIR}/uplift-calibration.png"
+
 # Decision table
 UPLIFT_BUCKET_COUNT = 5
 

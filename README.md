@@ -68,7 +68,7 @@ which makes it possible to score models on both **observed (IPW-adjusted)** outc
 - **Avg uplift:** Mean predicted uplift on the test set.
 - **Corr (true):** Correlation between predicted uplift and true `τ` on the test set.
 
-## Evaluation report (example run)
+## Evaluation report
 
 **Oracle policy value (true `τ`, top fraction):** 0.063  
 
@@ -96,31 +96,36 @@ X-, R-, DR-, and T-Learners all beat the random baseline on Qini Δ and achieve 
 
 ## Figures
 
+Static copies for this README live in [`output/`](output/); running `main.py` regenerates the same PNG filenames there.
+
 **Qini curves (Hajek IPW, holdout)** — incremental IPW effect vs fraction targeted, with random null band and median.
 
+- **Solid “Random” line:** ranks the holdout by **`RandomPolicy`** scores — one vector of i.i.d. **Gaussian** draws per split (σ set to match the scale of true τ in the simulator), then the same curve aggregation as for other learners across splits. It is one explicit baseline model, not the same construction as the null reference.
+- **Shaded band and dashed “Null random (median y)”:** **`qini_null_band_curves`** draws many **permutation-style** random rankings (roughly uniform scores), runs the same IPW Qini machinery each time, and plots the **5–95% band** and **median** of the resulting *y* values (`QINI_PLOT_NULL_BAND_DRAWS` in `config.py`). That summarizes “typical” curves when the ranking carries no uplift signal; it is intentionally different from the Gaussian `RandomPolicy` line.
+
 <p align="center">
-  <img src="docs/assets/qini-curves.png" alt="Qini curves" width="800" />
+  <img src="output/qini-curves.png" alt="Qini curves" width="800" />
 </p>
 
 **Uplift distribution by model** — density of predicted uplift vs the random control.
 
 <p align="center">
-  <img src="docs/assets/uplift-distribution.png" alt="Uplift distribution" width="800" />
+  <img src="output/uplift-distribution.png" alt="Uplift distribution" width="800" />
 </p>
 
 **Uplift calibration (Hajek IPW by score decile)** — observed effect in each predicted-uplift decile.
 
 <p align="center">
-  <img src="docs/assets/uplift-calibration.png" alt="Uplift calibration" width="800" />
+  <img src="output/uplift-calibration.png" alt="Uplift calibration" width="800" />
 </p>
 
-## Running
+## Run
 
 ```bash
 python3 main.py
 ```
 
-This fits learners, aggregates metrics across `MONTE_CARLO_SPLITS` holdouts (see `config.py`), and invokes the report/plotting utilities in `evaluation/report_generator.py`.
+This fits learners, aggregates metrics across `MONTE_CARLO_SPLITS` holdouts (see `config.py`), and invokes the report/plotting utilities in `evaluation/report_generator.py`. Figures are written under `output/` (paths in `config.py`: `OUTPUT_QINI_CURVES`, `OUTPUT_UPLIFT_DISTRIBUTION`, `OUTPUT_UPLIFT_CALIBRATION`).
 
 ## Appendix: Metric definitions
 
