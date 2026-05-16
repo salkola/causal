@@ -25,11 +25,21 @@ class TLearner:
 
 
 class XLearner:
+    """
+    Kunzel et al. X-learner: stage-two CATE surfaces are blended with propensity weights
+      τ̂(x) = ê(x) τ̂₀(x) + (1 − ê(x)) τ̂₁(x)
+    so the model trained on the larger / more-supported arm gets more mass when ê is skewed.
+    """
+
     def __init__(self) -> None:
         self.m0 = GradientBoostingRegressor(**gb_params)
         self.m1 = GradientBoostingRegressor(**gb_params)
+        self.propensity = GradientBoostingClassifier(**gb_params)
 
     def fit(self, X: np.ndarray, t: np.ndarray, y: np.ndarray) -> None:
+        t = np.asarray(t)
+        self.propensity.fit(X, t.astype(int))
+
         X0, y0 = X[t == 0], y[t == 0]
         X1, y1 = X[t == 1], y[t == 1]
 
@@ -46,7 +56,13 @@ class XLearner:
         self.m3.fit(X0, d0)
 
     def predict_uplift(self, X: np.ndarray) -> np.ndarray:
-        return 0.5 * (self.m2.predict(X) + self.m3.predict(X))
+        e = np.clip(
+            self.propensity.predict_proba(X)[:, 1],
+            PROPENSITY_CLIP_LOW,
+            PROPENSITY_CLIP_HIGH,
+        )
+        # m3 = τ̂ learned from control pseudo-effects; m2 = τ̂ from treated pseudo-effects.
+        return e * self.m3.predict(X) + (1.0 - e) * self.m2.predict(X)
 
 
 class DRLearner:

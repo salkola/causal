@@ -42,7 +42,7 @@ which makes it possible to score models on both **observed (IPW-adjusted)** outc
 - **X-Learner**
   - First learns treated/control outcome models.
   - Builds imputed treatment effects for each group.
-  - Learns effect models from those imputed targets, then combines them.
+  - Learns effect models from those imputed targets, then combines them with propensity weights: `τ̂(x) = ê(x) τ̂₀(x) + (1 − ê(x)) τ̂₁(x)` (more weight on the surface trained where assignment is more likely).
 - **DR-Learner**
   - Learns propensity `e(X)` and outcome models `μ1(X)`, `μ0(X)`.
   - Builds a doubly robust pseudo-outcome and regresses it to estimate `τ(X)`.
@@ -72,17 +72,17 @@ which makes it possible to score models on both **observed (IPW-adjusted)** outc
 
 **Oracle policy value (true `τ`, top fraction):** 0.063  
 
-**Holdout Monte Carlo:** 3 splits  
+**Holdout Monte Carlo:** 50 splits  
 
-**Qini Δ:** Qini raw minus the median of 100 random-ranking AUCs (**0.036**, averaged across splits). Models ranked by Qini Δ, with Corr (true) as tie-breaker.
+**Qini Δ:** Qini raw minus the median of 100 random-ranking AUCs (**0.030**, averaged across splits). Models ranked by Qini Δ, with Corr (true) as tie-breaker.
 
 | Rank | Model | Qini Δ (vs null) | Qini raw | Policy (IPW obs) | Policy (true `τ`) | Regret (true `τ`) | Avg uplift | Corr (true) |
 |------|--------|---------------------------|----------|------------------|------------------------|------------------------|------------|-------------|
-| 1 | X-Learner | 0.013 | 0.049 | 0.064 | 0.063 | 0.000 | 0.038 | 0.929 |
-| 2 | R-Learner | 0.012 | 0.049 | 0.063 | 0.062 | 0.001 | 0.038 | 0.875 |
-| 3 | DR-Learner | 0.012 | 0.049 | 0.063 | 0.063 | 0.001 | 0.038 | 0.873 |
-| 4 | T-Learner | 0.012 | 0.048 | 0.064 | 0.062 | 0.001 | 0.039 | 0.853 |
-| 5 | Random | 0.000 | 0.036 | 0.035 | 0.039 | 0.025 | −0.000 | 0.001 |
+| 1 | X-Learner | 0.009 | 0.039 | 0.051 | 0.049 | 0.014 | 0.033 | 0.346 |
+| 2 | DR-Learner | 0.009 | 0.039 | 0.050 | 0.049 | 0.014 | 0.032 | 0.280 |
+| 3 | R-Learner | 0.009 | 0.039 | 0.053 | 0.049 | 0.014 | 0.031 | 0.251 |
+| 4 | T-Learner | 0.008 | 0.038 | 0.051 | 0.048 | 0.015 | 0.032 | 0.276 |
+| 5 | Random | 0.000 | 0.030 | 0.033 | 0.039 | 0.025 | 0.000 | −0.003 |
 
 ### How to read these results
 
@@ -92,7 +92,7 @@ which makes it possible to score models on both **observed (IPW-adjusted)** outc
 
 ### Key takeaway
 
-X-, R-, DR-, and T-Learners all beat the random baseline on Qini Δ and achieve policy value near the oracle on true `τ`. X-Learner has the strongest overall alignment by `Corr (true)`, with R-Learner and DR-Learner close behind, while Random stays near zero correlation and has much higher regret.
+All meta-learners beat the random baseline on **Qini Δ**; **X-Learner** ranks first on Qini Δ and **Corr (true)**. DR- and R-Learners tie X on Qini Δ; T-Learner is close behind. Random has near-zero correlation and the highest regret. Policy value on true `τ` (~0.049) is below the oracle (0.063) with the current sample size and assignment strength.
 
 ## Figures
 

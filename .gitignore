@@ -2,5 +2,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+.venv/
+.matplotlib/
 data/raw/
 data/generated/
