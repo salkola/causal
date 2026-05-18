@@ -17,7 +17,13 @@ Each user’s conversion probability is a **baseline** (without treatment) plus 
 **True treatment effect** `τ(X)` — implemented in `config.cate`, what learners should recover:
 
 ```math
-\tau(X) = \text{CATE\_INTERCEPT} + \text{CATE\_INTENT\_SLOPE} \cdot \text{intent} + \text{CATE\_CONTEXT\_SLOPE} \cdot \text{context} + \text{CATE\_INTENT\_CONTEXT\_COEF} \cdot \text{intent} \cdot \text{context} + \text{CATE\_CONTEXT\_THRESHOLD\_BONUS} \cdot \mathbf{1}[\text{context} > \text{CATE\_CONTEXT\_THRESHOLD}]
+\begin{aligned}
+\tau(X) ={} & \text{CATE\_INTERCEPT} \\
+&+ \text{CATE\_INTENT\_SLOPE} \cdot \text{intent} \\
+&+ \text{CATE\_CONTEXT\_SLOPE} \cdot \text{context} \\
+&+ \text{CATE\_INTENT\_CONTEXT\_COEF} \cdot \text{intent} \cdot \text{context} \\
+&+ \text{CATE\_CONTEXT\_THRESHOLD\_BONUS} \cdot \mathbf{1}[\text{context} > \text{CATE\_CONTEXT\_THRESHOLD}]
+\end{aligned}
 ```
 
 Coefficients are set in `config.py` ([Simulator knobs](#simulator-knobs-configpy)).
