@@ -7,9 +7,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 
 from config import (
-    CATE_INTERCEPT,
-    CATE_INTENT_SLOPE,
     GRADIENT_BOOSTING_PARAMS,
+    cate,
     HOLDOUT_TEST_SIZE,
     MONTE_CARLO_SPLITS,
     PROPENSITY_CLIP_HIGH,
@@ -44,7 +43,7 @@ def main() -> None:
     X = df[["intent", "context"]].values
     t = df["treatment"].values
     y = df["conversion"].values
-    true_effect = CATE_INTERCEPT + CATE_INTENT_SLOPE * df["intent"].values
+    true_effect = cate(df["intent"].values, df["context"].values)
 
     model_specs: list[tuple[str, Callable[[], Any]]] = [
         ("T-Learner", TLearner),

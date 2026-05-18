@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import math
+import numpy as np
 
 # Randomness
 RANDOM_SEED = 0
 
 # Data generation (ads DGP)
-N_SAMPLES_DEFAULT = 20_000
+N_SAMPLES_DEFAULT = 50_000
 
 BETA_INTENT_A = 2
 BETA_INTENT_B = 5
@@ -16,15 +16,21 @@ BETA_INTENT_B = 5
 CONTEXT_MEAN = 0.0
 CONTEXT_STD = 1.0
 
-TREATMENT_PROB_INTERCEPT = 0.1
-TREATMENT_PROB_SLOPE = 0.3
+TREATMENT_PROB_INTERCEPT = 0.5
+TREATMENT_PROB_SLOPE = 0.0
 
-OUTCOME_BASE = 0.02
-OUTCOME_INTENT_COEF = 0.08
+OUTCOME_BASE = 0.01
+OUTCOME_INTENT_COEF = 0.01
 OUTCOME_CONTEXT_COEF = 0.01
 
-CATE_INTERCEPT = 0.01
-CATE_INTENT_SLOPE = 0.10
+# True CATE τ(X). Propensity uses intent only (see TREATMENT_PROB_*), so uplift
+# heterogeneity is partly misaligned with who gets treated.
+CATE_INTERCEPT = 0.02
+CATE_INTENT_SLOPE = 0.02
+CATE_CONTEXT_SLOPE = 0.02
+CATE_INTENT_CONTEXT_COEF = 0.01
+CATE_CONTEXT_THRESHOLD = 0.5
+CATE_CONTEXT_THRESHOLD_BONUS = 0.0
 
 PROB_CLIP_MIN = 0.0
 PROB_CLIP_MAX = 1.0
@@ -48,7 +54,7 @@ PROPENSITY_CLIP_HIGH = 0.99
 
 # Evaluation / metrics
 HOLDOUT_TEST_SIZE = 0.4
-MONTE_CARLO_SPLITS = 50
+MONTE_CARLO_SPLITS = 100
 DEFAULT_POLICY_TOP_K = 0.2
 QINI_N_BINS = 20
 # Smallest *nominal* fraction on the grid (actual first point may be larger if min prefix applies).
@@ -63,7 +69,7 @@ QINI_PLOT_NULL_BAND_DRAWS = 100
 
 SAFE_CORR_STD_EPS = 1e-8
 
-METRIC_DECIMALS = 3
+METRIC_DECIMALS = 4
 EVALUATION_REPORT_TITLE = "================ CAUSAL ML EVALUATION REPORT ================"
 
 # Figures written by `evaluation/report_generator.py` (also referenced in README)
@@ -79,12 +85,23 @@ UPLIFT_BUCKET_COUNT = 5
 MEAN_UPLIFT_VALUE = 0.03
 
 
-def _beta_variance(a: float, b: float) -> float:
-    return (a * b) / ((a + b) ** 2 * (a + b + 1))
+def cate(intent: np.ndarray, context: np.ndarray) -> np.ndarray:
+    """Conditional average treatment effect τ(X) under the simulator."""
+    return (
+        CATE_INTERCEPT
+        + CATE_INTENT_SLOPE * intent
+        + CATE_CONTEXT_SLOPE * context
+        + CATE_INTENT_CONTEXT_COEF * intent * context
+        + CATE_CONTEXT_THRESHOLD_BONUS * (context > CATE_CONTEXT_THRESHOLD)
+    )
 
 
-# Simulator CATE: τ = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent, intent ~ Beta(BETA_INTENT_A, BETA_INTENT_B).
-# SD(τ) = |CATE_INTENT_SLOPE| * SD(intent). RandomPolicy uses N(0, SD(τ)) so score spread matches heterogeneity scale.
-RANDOM_POLICY_SCORE_STD = abs(CATE_INTENT_SLOPE) * math.sqrt(
-    _beta_variance(BETA_INTENT_A, BETA_INTENT_B)
-)
+def _estimate_cate_std(n: int = 100_000, seed: int = RANDOM_SEED) -> float:
+    rng = np.random.default_rng(seed)
+    intent = rng.beta(BETA_INTENT_A, BETA_INTENT_B, n)
+    context = rng.normal(CONTEXT_MEAN, CONTEXT_STD, n)
+    return float(np.std(cate(intent, context), ddof=0))
+
+
+# RandomPolicy: N(0, SD(τ)) under the simulator.
+RANDOM_POLICY_SCORE_STD = _estimate_cate_std()

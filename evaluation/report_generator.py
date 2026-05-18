@@ -24,6 +24,7 @@ from evaluation.metrics import (
     hajek_ate,
     model_policy_value,
     oracle_policy_value,
+    qini_curve_oracle_tau,
     qini_null_band_curves,
     true_regret,
 )
@@ -73,7 +74,6 @@ def plot_uplift_calibration(
     plt.figure()
 
     for r in models_results:
-
         uplift = r["uplift"]
 
         if np.std(uplift) < SAFE_CORR_STD_EPS:
@@ -96,7 +96,6 @@ def plot_uplift_calibration(
         plt.plot(range(len(lifts)), lifts, marker="o", label=r["name"])
 
     plt.axhline(0, linestyle="--", color="black", alpha=0.5, label="Zero")
-
     plt.title("Uplift calibration (Hajek IPW by score decile)")
     plt.xlabel("Uplift decile (low → high)")
     plt.ylabel("Hajek IPW effect in bin")
@@ -127,7 +126,10 @@ def print_evaluation_summary(
     d = METRIC_DECIMALS
     # Fixed-width numeric formatting: show '-' when negative, no '+' when positive.
     width = d + 3
-    fmt = lambda v: f"{v:>{width}.{d}f}"
+
+    def fmt(v: float) -> str:
+        return f"{v:>{width}.{d}f}"
+
     null_ref = models_results[0]["qini_null_median"]
 
     print(f"\n{EVALUATION_REPORT_TITLE}\n")
@@ -144,7 +146,7 @@ def print_evaluation_summary(
     print("- Qini raw is set to that null median.")
     print("- Qini Δ is fixed at 0.")
     print(
-        f"- Policy/Corr use random Gaussian scores (σ = SD(τ) under Beta DGP = "
+        f"- Policy/Corr use random Gaussian scores (σ = SD(τ) under simulator = "
         f"{RANDOM_POLICY_SCORE_STD:.{METRIC_DECIMALS}f})."
     )
     print("- Qini curve uses the same random scores.\n")
@@ -206,10 +208,20 @@ def generate_report(
         label="Null random (median y)",
     )
 
+    xs_oracle, ys_oracle = qini_curve_oracle_tau(true_effect)
+    plt.plot(
+        xs_oracle,
+        ys_oracle,
+        color="0.1",
+        linestyle="-",
+        linewidth=1.0,
+        label="Oracle (rank by true τ, mean τ)",
+    )
+
     plt.legend(loc="best")
-    plt.title("Qini curves (Hajek IPW, holdout)")
+    plt.title("Qini curves (Hajek IPW; oracle = mean τ if ranked by truth)")
     plt.xlabel("Fraction targeted")
-    plt.ylabel("IPW incremental effect")
+    plt.ylabel("Effect in top targeted fraction")
     _ensure_output_dir()
     plt.savefig(OUTPUT_QINI_CURVES, dpi=140, bbox_inches="tight")
     plt.show()

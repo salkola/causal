@@ -8,7 +8,7 @@ from config import MEAN_UPLIFT_VALUE, RANDOM_POLICY_SCORE_STD, RANDOM_SEED
 class RandomPolicy:
     """
     Random ranking baseline: i.i.d. Gaussian scores (no ties almost surely).
-    Default σ is RANDOM_POLICY_SCORE_STD = SD(τ) under the Beta-intent DGP in config.
+    Default σ is RANDOM_POLICY_SCORE_STD = SD(τ) under the simulator (see config.cate).
     """
 
     def __init__(

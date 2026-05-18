@@ -6,8 +6,6 @@ import pandas as pd
 from config import (
     BETA_INTENT_A,
     BETA_INTENT_B,
-    CATE_INTERCEPT,
-    CATE_INTENT_SLOPE,
     CONTEXT_MEAN,
     CONTEXT_STD,
     N_SAMPLES_DEFAULT,
@@ -19,6 +17,7 @@ from config import (
     RANDOM_SEED,
     TREATMENT_PROB_INTERCEPT,
     TREATMENT_PROB_SLOPE,
+    cate,
 )
 
 
@@ -31,8 +30,7 @@ def outcome(
     treatment: np.ndarray,
 ) -> np.ndarray:
     base = OUTCOME_BASE + OUTCOME_INTENT_COEF * intent + OUTCOME_CONTEXT_COEF * context
-    treatment_effect = CATE_INTERCEPT + CATE_INTENT_SLOPE * intent
-    p = base + treatment * treatment_effect
+    p = base + treatment * cate(intent, context)
     return p
 
 
@@ -45,11 +43,10 @@ def generate_ads_data(
     intent = np.random.beta(BETA_INTENT_A, BETA_INTENT_B, n)
     context = np.random.normal(CONTEXT_MEAN, CONTEXT_STD, n)
 
-    # treatment assignment bias (selection bias)
+    # Assignment depends on intent only (not on context-driven τ).
     treatment_prob = TREATMENT_PROB_INTERCEPT + TREATMENT_PROB_SLOPE * intent
     treatment = np.random.binomial(1, treatment_prob)
 
-    # observed outcome
     p = outcome(intent, context, treatment)
     conversion = np.random.binomial(1, np.clip(p, PROB_CLIP_MIN, PROB_CLIP_MAX))
 
@@ -57,19 +54,13 @@ def generate_ads_data(
         "intent": intent,
         "context": context,
         "treatment": treatment,
-        "conversion": conversion
+        "conversion": conversion,
     })
 
 
-# -----------------------------
-# TRUE causal quantity (ATE)
-# -----------------------------
-def true_ate() -> float:
-    """
-    Analytical ATE:
-    E[ (0.01 + 0.10 * intent) ]
-    intent ~ Beta(2, 5)
-    """
-    return CATE_INTERCEPT + CATE_INTENT_SLOPE * (
-        BETA_INTENT_A / (BETA_INTENT_A + BETA_INTENT_B)
-    )
+def true_ate(n_mc: int = 200_000, seed: int = RANDOM_SEED) -> float:
+    """Monte Carlo E[τ(X)] under the simulator."""
+    rng = np.random.default_rng(seed)
+    intent = rng.beta(BETA_INTENT_A, BETA_INTENT_B, n_mc)
+    context = rng.normal(CONTEXT_MEAN, CONTEXT_STD, n_mc)
+    return float(np.mean(cate(intent, context)))

@@ -163,6 +163,39 @@ def qini_curve_ipw(
     return np.array(xs), np.array(ys)
 
 
+def qini_curve_oracle_tau(
+    true_effect: np.ndarray,
+    n_bins: int = QINI_N_BINS,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Oracle Qini curve: target top fractions by true τ; y = mean τ in each prefix.
+
+    Uses the same fraction grid as qini_curve_ipw for comparable x-axis points.
+    Simulation only (requires known per-unit CATE).
+    """
+    true_effect = np.asarray(true_effect, dtype=float)
+    order = np.argsort(-true_effect)
+    tau_s = true_effect[order]
+    n = len(tau_s)
+
+    min_frac = max(QINI_FRAC_MIN, min(QINI_FRAC_MAX, QINI_MIN_PREFIX_SAMPLES / max(n, 1)))
+    fracs = np.linspace(min_frac, QINI_FRAC_MAX, n_bins)
+    min_m = min(int(QINI_MIN_PREFIX_SAMPLES), n)
+
+    xs, ys = [], []
+    prev_m = 0
+    for frac in fracs:
+        m = max(1, int(frac * n), min_m)
+        m = min(max(m, prev_m + 1), n)
+        if m <= prev_m:
+            continue
+        prev_m = m
+        xs.append(m / n)
+        ys.append(float(np.mean(tau_s[:m])))
+
+    return np.array(xs), np.array(ys)
+
+
 def qini_auc(xs: np.ndarray, ys: np.ndarray) -> float:
     return float(auc(xs, ys))
 
