@@ -16,9 +16,9 @@ Each user’s conversion probability is a **baseline** (without treatment) plus 
 
 **True treatment effect** `τ(X)` — implemented in `config.cate`, what learners should recover:
 
-$$
+```math
 \tau(X) = \text{CATE\_INTERCEPT} + \text{CATE\_INTENT\_SLOPE} \cdot \text{intent} + \text{CATE\_CONTEXT\_SLOPE} \cdot \text{context} + \text{CATE\_INTENT\_CONTEXT\_COEF} \cdot \text{intent} \cdot \text{context} + \text{CATE\_CONTEXT\_THRESHOLD\_BONUS} \cdot \mathbf{1}[\text{context} > \text{CATE\_CONTEXT\_THRESHOLD}]
-$$
+```
 
 Coefficients are set in `config.py` ([Simulator knobs](#simulator-knobs-configpy)).
 
@@ -32,9 +32,9 @@ Coefficients are set in `config.py` ([Simulator knobs](#simulator-knobs-configpy
 
 Who receives the treatment (e.g. sees the ad) is drawn from
 
-$$
+```math
 P(T=1 \mid X) = \mathrm{clip}(\text{TREATMENT\_PROB\_INTERCEPT} + \text{TREATMENT\_PROB\_SLOPE} \cdot \text{intent},\, 0,\, 1)
-$$
+```
 
 The **intent** term is **treatment selection bias**: when `TREATMENT_PROB_SLOPE > 0`, users with higher intent are more likely to be treated, so the treated and control groups differ on intent before outcomes are compared. When `TREATMENT_PROB_SLOPE = 0`, that bias is turned off—everyone shares the same `P(T=1)` (an RCT). `context` does not enter assignment, but it can still enter uplift **τ(X)**, so who benefits most from treatment need not match who was selected for treatment.
 
@@ -197,9 +197,9 @@ All values below are the defaults in `config.py`. Change them there and re-run `
 
 **Data generating process (per user)**
 
-$$
+```math
 P(Y=1 \mid X, T) = \mathrm{clip}(\mu(X) + T \cdot \tau(X),\, 0,\, 1)
-$$
+```
 
 where `conversion ~ Binomial(1, P(Y=1))`.
 
@@ -212,9 +212,9 @@ where `conversion ~ Binomial(1, P(Y=1))`.
 
 **Treatment assignment** (intent only — not used in τ)
 
-$$
+```math
 P(T=1 \mid X) = \mathrm{clip}(\text{TREATMENT\_PROB\_INTERCEPT} + \text{TREATMENT\_PROB\_SLOPE} \cdot \text{intent},\, 0,\, 1)
-$$
+```
 
 | Constant | Default | Role |
 |----------|---------|------|
@@ -223,9 +223,9 @@ $$
 
 **Baseline outcome** `μ(X)` (conversion probability without treatment)
 
-$$
+```math
 \mu(X) = \text{OUTCOME\_BASE} + \text{OUTCOME\_INTENT\_COEF} \cdot \text{intent} + \text{OUTCOME\_CONTEXT\_COEF} \cdot \text{context}
-$$
+```
 
 | Constant | Default | Role |
 |----------|---------|------|
