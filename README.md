@@ -116,14 +116,11 @@ Report below uses `config.py` defaults: `N_SAMPLES_DEFAULT = 50_000`, RCT (`TREA
 
 - **Meta-learners beat random clearly.** Random **Qini raw** is **0.0248** (chance-level curve area); learners reach **~0.037** (**Qini Δ** ~**0.012**). Random has ~zero **Corr (true)** and the largest **regret** (~0.033).
 - **X-Learner leads on ranking metrics.** Highest **Qini Δ**, **Policy (IPW)**, **policy (true τ)**, and **Corr (true)** (~0.81). **Regret** is lowest (~0.004).
+- **Why X has the highest Corr (true):** τ depends on intent, context, and their interaction; X-Learner imputes uplift in each arm and blends two τ models ([Models](#models)), which tracks that structure over the **full** holdout. DR/R regress one noisy pseudo-outcome per row; T-Learner differences two binary outcome surfaces—so global ranking is weaker (~0.72 / ~0.45) even when top-20% policy is close to X’s.
 - **DR, T, and R cluster below X.** Similar **Qini Δ** (~0.012) and **policy (true τ)** (~0.053); **T-Learner** lags on **Corr (true)** (~0.45) while **DR/R** are ~0.72.
 - **Campaign-style metrics separate models more than before.** **Policy (IPW)** ranges ~0.046–0.047 for top learners vs **0.026** for random—useful when the product fixes a top-20% budget (`DEFAULT_POLICY_TOP_K`).
 - **Oracle gap remains.** Perfect top-20% targeting would mean τ ≈ **0.0585**; the best model reaches **~0.054**—about **0.004** regret left.
 - **Score scales overlap.** **Avg uplift** ~**0.026** across learners; gains come from **ordering**, not very different mean predictions.
-
-## Figures
-
-The three figures below mirror the evaluation table. `main.py` regenerates them on each run.
 
 ### Qini curves
 
@@ -161,7 +158,7 @@ The three figures below mirror the evaluation table. `main.py` regenerates them 
 python3 main.py
 ```
 
-This fits learners, aggregates metrics across `MONTE_CARLO_SPLITS` holdouts (see `config.py`), prints the leaderboard, and updates the figures in [Figures](#figures).
+This fits learners, aggregates metrics across `MONTE_CARLO_SPLITS` holdouts (see `config.py`), prints the leaderboard, and updates the plots under [Evaluation report](#evaluation-report).
 
 ## Appendix: metrics
 
