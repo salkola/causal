@@ -16,9 +16,9 @@ Each user’s conversion probability is a **baseline** (without treatment) plus 
 
 **True treatment effect** `τ(X)` — implemented in `config.cate`, what learners should recover:
 
-\[
-\tau(X) = \texttt{CATE\_INTERCEPT} + \texttt{CATE\_INTENT\_SLOPE} \cdot \mathrm{intent} + \texttt{CATE\_CONTEXT\_SLOPE} \cdot \mathrm{context} + \texttt{CATE\_INTENT\_CONTEXT\_COEF} \cdot \mathrm{intent} \cdot \mathrm{context} + \texttt{CATE\_CONTEXT\_THRESHOLD\_BONUS} \cdot \mathbf{1}\{\mathrm{context} > \texttt{CATE\_CONTEXT\_THRESHOLD}\}
-\]
+$$
+\tau(X) = \mathrm{CATE\_INTERCEPT} + \mathrm{CATE\_INTENT\_SLOPE} \cdot \mathrm{intent} + \mathrm{CATE\_CONTEXT\_SLOPE} \cdot \mathrm{context} + \mathrm{CATE\_INTENT\_CONTEXT\_COEF} \cdot \mathrm{intent} \cdot \mathrm{context} + \mathrm{CATE\_CONTEXT\_THRESHOLD\_BONUS} \cdot \mathbf{1}\{\mathrm{context} > \mathrm{CATE\_CONTEXT\_THRESHOLD}\}
+$$
 
 Coefficients are set in `config.py` ([Simulator knobs](#simulator-knobs-configpy)).
 
@@ -32,9 +32,9 @@ Coefficients are set in `config.py` ([Simulator knobs](#simulator-knobs-configpy
 
 Who receives the treatment (e.g. sees the ad) is drawn from
 
-\[
-P(T=1 \mid X) = \mathrm{clip}\bigl(\texttt{TREATMENT\_PROB\_INTERCEPT} + \texttt{TREATMENT\_PROB\_SLOPE} \cdot \mathrm{intent},\ 0,\ 1\bigr)
-\]
+$$
+P(T=1 \mid X) = \mathrm{clip}(\mathrm{TREATMENT\_PROB\_INTERCEPT} + \mathrm{TREATMENT\_PROB\_SLOPE} \cdot \mathrm{intent},\, 0,\, 1)
+$$
 
 The **intent** term is **treatment selection bias**: when `TREATMENT_PROB_SLOPE > 0`, users with higher intent are more likely to be treated, so the treated and control groups differ on intent before outcomes are compared. When `TREATMENT_PROB_SLOPE = 0`, that bias is turned off—everyone shares the same `P(T=1)` (an RCT). `context` does not enter assignment, but it can still enter uplift **τ(X)**, so who benefits most from treatment need not match who was selected for treatment.
 
@@ -197,9 +197,9 @@ All values below are the defaults in `config.py`. Change them there and re-run `
 
 **Data generating process (per user)**
 
-\[
-P(Y=1 \mid X, T) = \mathrm{clip}\bigl(\mu(X) + T \cdot \tau(X),\ 0,\ 1\bigr)
-\]
+$$
+P(Y=1 \mid X, T) = \mathrm{clip}(\mu(X) + T \cdot \tau(X),\, 0,\, 1)
+$$
 
 where `conversion ~ Binomial(1, P(Y=1))`.
 
@@ -212,9 +212,9 @@ where `conversion ~ Binomial(1, P(Y=1))`.
 
 **Treatment assignment** (intent only — not used in τ)
 
-\[
-P(T=1 \mid X) = \mathrm{clip}\bigl(\texttt{TREATMENT\_PROB\_INTERCEPT} + \texttt{TREATMENT\_PROB\_SLOPE} \cdot \mathrm{intent},\ 0,\ 1\bigr)
-\]
+$$
+P(T=1 \mid X) = \mathrm{clip}(\mathrm{TREATMENT\_PROB\_INTERCEPT} + \mathrm{TREATMENT\_PROB\_SLOPE} \cdot \mathrm{intent},\, 0,\, 1)
+$$
 
 | Constant | Default | Role |
 |----------|---------|------|
@@ -223,9 +223,9 @@ P(T=1 \mid X) = \mathrm{clip}\bigl(\texttt{TREATMENT\_PROB\_INTERCEPT} + \texttt
 
 **Baseline outcome** `μ(X)` (conversion probability without treatment)
 
-\[
-\mu(X) = \texttt{OUTCOME\_BASE} + \texttt{OUTCOME\_INTENT\_COEF} \cdot \mathrm{intent} + \texttt{OUTCOME\_CONTEXT\_COEF} \cdot \mathrm{context}
-\]
+$$
+\mu(X) = \mathrm{OUTCOME\_BASE} + \mathrm{OUTCOME\_INTENT\_COEF} \cdot \mathrm{intent} + \mathrm{OUTCOME\_CONTEXT\_COEF} \cdot \mathrm{context}
+$$
 
 | Constant | Default | Role |
 |----------|---------|------|
